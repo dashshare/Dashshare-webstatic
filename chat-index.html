@@ -8,7 +8,6 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <link rel="icon" type="image/x-icon" href="https://icon.gdscdn.pages.dev/icon-main.ico">
-    <link rel="shortcut icon" type="image/x-icon" href="https://icon.gdscdn.pages.dev/icon-main.ico">
     <style>
         :root {
             --gold-primary: #d4af37; --gold-dark: #b45309; --gold-light: #fffbeb;
@@ -23,7 +22,7 @@
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, system-ui, sans-serif; }
         body { display: flex; height: 100vh; overflow: hidden; background: var(--bg-chat); color: var(--text-main); }
         #toast-container { position: fixed; top: 20px; right: 20px; z-index: 99999; display: flex; flex-direction: column; gap: 10px; }
-        .toast-item { background: #1e1b4b; color: #fff; padding: 14px 20px; border-radius: 8px; font-size: 14px; min-width: 300px; box-shadow: 0 10px 15px rgba(0,0,0,0.1); border-left: 5px solid var(--gold-primary); transform: translateX(120%); transition: 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+        .toast-item { background: #1e1b4b; color: #fff; padding: 14px 20px; border-radius: 8px; font-size: 14px; min-width: 300px; box-shadow: 0 10px 15px rgba(0,0,0,0.1); border-left: 5px solid var(--gold-primary); transform: translateX(120%); transition: 0.3s; }
         .toast-item.show { transform: translateX(0); }
         .auth-container { position: fixed; inset: 0; background: #fafaf9; display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 999; }
         .auth-card { background: #ffffff; padding: 30px; border-radius: 8px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); width: 100%; max-width: 420px; border: 1px solid var(--border-color); text-align: center; }
@@ -47,7 +46,6 @@
         .session-item { display: flex; align-items: center; padding: 12px; gap: 12px; cursor: pointer; border-bottom: 1px solid var(--border-color); }
         .session-item.active { background: var(--gold-light); border-left: 4px solid var(--gold-primary); }
         .session-avatar { width: 40px; height: 40px; border-radius: 50%; background: var(--gold-primary); color: white; display: flex; align-items: center; justify-content: center; font-weight: bold; background-size: cover; background-position: center; }
-        #search-result-dropdown { background: var(--gold-light); padding: 12px; border-bottom: 1px solid var(--border-color); display: none; flex-direction: column; gap: 8px; }
         .zalo-chat-main { flex: 1; background: var(--bg-chat); display: flex; flex-direction: column; }
         .chat-header { background: #fff; border-bottom: 1px solid var(--border-color); padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; }
         .chat-messages-area { flex: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; }
@@ -61,7 +59,7 @@
         .chat-text-input-zone input { flex: 1; border: none; outline: none; font-size: 14px; background: transparent; color: var(--text-main); }
         .chat-send-btn { background: none; border: none; color: var(--gold-dark); font-weight: bold; cursor: pointer; }
         .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.4); display: none; justify-content: center; align-items: center; z-index: 999; }
-        .modal-card { background: var(--panel-box); padding: 25px; border-radius: 8px; width: 90%; max-width: 450px; border: 1px solid var(--border-color); }
+        .modal-card { background: var(--panel-box); padding: 25px; border-radius: 8px; width: 90%; max-width: 450px; border: 1px solid var(--border-color); max-height: 90vh; overflow-y: auto; }
         #call-zone { display: none; position: fixed; top: 20px; left: 50%; transform: translateX(-50%); background: #111; padding: 15px; border-radius: 12px; z-index: 10000; box-shadow: 0 20px 40px rgba(0,0,0,0.5); width: 600px; }
         .video-container { display: flex; gap: 10px; height: 220px; margin-bottom: 15px; }
         video { width: 50%; height: 100%; background: #222; border-radius: 8px; object-fit: cover; }
@@ -77,21 +75,27 @@
                 <button class="auth-tab-btn" id="tab-register">ĐĂNG KÝ</button>
             </div>
             <h3 id="auth-header-title" style="color:var(--gold-dark); margin-bottom: 15px;">DashShare Gold</h3>
+            
             <div id="form-auth-fields">
                 <input type="email" id="email" class="auth-input" placeholder="Nhập Email">
                 <input type="password" id="password" class="auth-input" placeholder="Nhập mật khẩu">
             </div>
+
             <div id="otp-area" style="display:none;">
-                <p style="font-size:12px; color:var(--gold-dark); margin-bottom:5px;">Hệ thống đã kích hoạt cổng kiểm tra. Vui lòng nhập mã OTP:</p>
-                <input type="text" id="otp-code" class="auth-input" placeholder="Mã OTP từ hệ thống xác thực">
+                <p style="font-size:12px; color:var(--gold-dark); margin-bottom:5px;">Vui lòng nhập mã OTP gửi tới Email của bạn:</p>
+                <input type="text" id="otp-code" class="auth-input" placeholder="Mã OTP">
             </div>
-            <div id="qr-zone" style="display:none; justify-content:center; margin: 15px 0;">
+
+            <div id="qr-zone" style="display:none; flex-direction:column; align-items:center; margin: 15px 0;">
                 <div id="qrcode-canvas"></div>
+                <p style="font-size:11px; color:var(--text-sub); margin-top:5px;">Quét mã này trên thiết bị đã đăng nhập để vào ứng dụng</p>
             </div>
+
             <div id="auth-options" style="margin: 10px 0; display:flex; gap:10px; justify-content: center;">
                 <button class="auth-tab-btn" style="font-size:11px;" id="btn-pk-mode">SỬ DỤNG PASSKEY</button>
                 <button class="auth-tab-btn" style="font-size:11px;" id="btn-qr-mode">QUÉT MÃ QR</button>
             </div>
+
             <button id="auth-submit-btn" class="auth-submit">TIẾP TỤC</button>
         </div>
     </div>
@@ -112,17 +116,7 @@
                 </div>
                 <button class="add-contact-btn" id="open-group-modal-btn" title="Tạo Nhóm Mới"><i class="fa-solid fa-users" style="color:var(--gold-dark);"></i></button>
             </div>
-            <div id="search-result-dropdown">
-                <div style="font-size:11px; font-weight:bold; color:var(--gold-dark);" id="search-res-type-title">KẾT QUẢ</div>
-                <div style="display:flex; align-items:center; gap:10px; background:#fff; padding:8px; border-radius:6px; border:1px solid var(--border-color);">
-                    <div id="search-res-avatar" style="width:34px; height:34px; background:var(--gold-primary); border-radius:50%; color:white; display:flex; align-items:center; justify-content:center; font-weight:bold; background-size:cover;"></div>
-                    <div style="flex:1;">
-                        <div id="search-res-name" style="font-weight:bold; font-size:13px;">...</div>
-                        <div id="search-res-id" style="font-size:11px; color:var(--text-sub);">...</div>
-                    </div>
-                    <button id="search-action-btn" style="padding:6px 12px; background:var(--gold-dark); border:none; color:#fff; border-radius:4px; font-size:11px; font-weight:bold; cursor:pointer;"></button>
-                </div>
-            </div>
+
             <div class="chat-sessions-list">
                 <div class="section-header-title"><i class="fa-solid fa-users-rectangle"></i> Nhóm đã tham gia</div>
                 <div id="sidebar-groups-root"></div>
@@ -137,16 +131,20 @@
                     <div class="chat-header-name" id="active-chat-title" style="font-weight:bold; font-size:16px;">Hãy chọn một hội thoại</div>
                     <div style="font-size:12px; color: var(--gold-dark);" id="active-chat-route-info">/share/...</div>
                 </div>
-                <div id="call-actions" style="display:none; gap:15px;">
-                    <button id="call-audio-btn" style="background:none; border:none; font-size:18px; color:var(--gold-dark); cursor:pointer;"><i class="fa-solid fa-phone"></i></button>
-                    <button id="call-video-btn" style="background:none; border:none; font-size:18px; color:var(--gold-dark); cursor:pointer;"><i class="fa-solid fa-video"></i></button>
+                <div style="display:flex; gap:15px; align-items:center;">
+                    <button id="btn-group-manage" style="display:none; background:none; border:none; font-size:16px; color:var(--gold-dark); cursor:pointer;" title="Quản lý nhóm"><i class="fa-solid fa-list-check"></i></button>
+                    <div id="call-actions" style="display:none; gap:15px;">
+                        <button id="call-audio-btn" style="background:none; border:none; font-size:18px; color:var(--gold-dark); cursor:pointer;"><i class="fa-solid fa-phone"></i></button>
+                        <button id="call-video-btn" style="background:none; border:none; font-size:18px; color:var(--gold-dark); cursor:pointer;"><i class="fa-solid fa-video"></i></button>
+                    </div>
                 </div>
             </div>
             <div class="chat-messages-area" id="msg-panel"></div>
             <div class="chat-input-bar">
                 <div class="chat-toolbar">
-                    <label for="file-upload-input" style="cursor: pointer;" title="Đính kèm tài liệu"><i class="fa-solid fa-paperclip" style="color:var(--gold-primary);"></i> Tải tài liệu lên</label>
+                    <label for="file-upload-input" style="cursor: pointer;" title="Đính kèm tài liệu/Hình ảnh"><i class="fa-solid fa-paperclip" style="color:var(--gold-primary);"></i> Đính kèm tệp</label>
                     <input type="file" id="file-upload-input" style="display: none;">
+                    <button id="btn-sync-qr-other" style="background:none; border:none; color:var(--text-sub); cursor:pointer; font-size:14px;"><i class="fa-solid fa-qrcode"></i> Quét Đăng Nhập Máy Khác</button>
                 </div>
                 <div class="chat-text-input-zone">
                     <input type="text" id="type-box" placeholder="Soạn thảo tin nhắn tại đây...">
@@ -168,7 +166,11 @@
 
     <div class="modal-overlay" id="profile-modal">
         <div class="modal-card">
-            <h3>Cập nhật hồ sơ tài khoản</h3><br>
+            <h3>Hồ sơ tài khoản của bạn</h3><br>
+            <div style="font-size:13px; color:var(--gold-dark); margin-bottom:10px;">
+                <p><b>ID cá nhân (Route):</b> <span id="lbl-route-people">/people/...</span></p>
+                <p><b>Link rút gọn danh thiếp:</b> <a href="#" id="lbl-share-people" target="_blank" style="color:blue;">/share/...</a></p>
+            </div>
             <label>Tên hiển thị:</label>
             <input type="text" id="prof-name" class="auth-input">
             <label>Tiểu sử giới thiệu:</label>
@@ -184,15 +186,22 @@
 
     <div class="modal-overlay" id="settings-modal">
         <div class="modal-card">
-            <h3>Cài đặt cấu hình & Giao diện</h3><br>
-            <label>Chế độ hiển thị sáng tối:</label>
+            <h3>Cài đặt cấu hình & Bảo mật</h3><br>
+            <label>Chế độ hiển thị giao diện:</label>
             <select id="setting-theme" class="auth-input">
                 <option value="light">Giao diện Gold Light</option>
                 <option value="dark">Giao diện Gold Dark Space</option>
             </select>
-            <label>Mã khóa bảo mật bảo vệ (4 số):</label>
-            <input type="password" id="setting-pin" class="auth-input" maxlength="4" placeholder="Nhập 4 số khóa bảo vệ">
-            <button class="auth-submit" id="lock-acc-btn" style="background:#dc2626; margin-bottom: 10px;">KHOÁ TÀI KHOẢN TẠM THỜI</button>
+            <label>Mã khóa ứng dụng bảo vệ (4 số PIN):</label>
+            <input type="password" id="setting-pin" class="auth-input" maxlength="4" placeholder="Nhập 4 số bảo vệ">
+            
+            <label>Cài đặt khóa bảo mật độc lập (Passkey Token):</label>
+            <div style="display:flex; gap:10px;">
+                <input type="text" id="setting-passkey" class="auth-input" readonly placeholder="Chưa kích hoạt Passkey">
+                <button class="auth-submit" id="btn-gen-passkey" style="margin-top:8px; width:auto; padding:0 10px;">Tạo mới</button>
+            </div>
+            
+            <button class="auth-submit" id="lock-acc-btn" style="background:#dc2626; margin-bottom: 10px;">KHOÁ TÀI KHOẢN TẠM THỜI (MÃ HÓA 4 SỐ)</button>
             <button class="auth-submit btn-close-modal" style="background:#64748b;">Đóng</button>
         </div>
     </div>
@@ -206,6 +215,26 @@
         </div>
     </div>
 
+    <div class="modal-overlay" id="group-manage-modal">
+        <div class="modal-card">
+            <h3>Cài đặt thông tin nhóm (Trưởng Nhóm)</h3><br>
+            <div style="font-size:13px; color:var(--gold-dark); margin-bottom:10px;">
+                <p><b>ID Nhóm (Route):</b> <span id="lbl-route-group">/group/...</span></p>
+                <p><b>Link rút gọn nhóm:</b> <a href="#" id="lbl-share-group" target="_blank" style="color:blue;">/share/...</a></p>
+            </div>
+            <label>Tên nhóm chat:</label>
+            <input type="text" id="g-manage-name" class="auth-input">
+            <label>Mô tả/Tiểu sử nhóm:</label>
+            <input type="text" id="g-manage-bio" class="auth-input">
+            <label>Ảnh đại diện nhóm (Icon):</label>
+            <input type="file" id="g-manage-icon-file" class="auth-input">
+            <label>Ảnh bìa nhóm (Cover):</label>
+            <input type="file" id="g-manage-cover-file" class="auth-input">
+            <button class="auth-submit" id="btn-save-group-manage">CẬP NHẬT THÔNG TIN</button>
+            <button class="auth-submit btn-close-modal" style="background:#64748b;">Đóng</button>
+        </div>
+    </div>
+
     <script>
         const socket = io();
         let token = localStorage.getItem('gold_token') || '';
@@ -213,25 +242,32 @@
         let activeTargetId = '';
         let isGroupActive = false;
         let currentAuthMode = 'login';
-        let currentSubMode = 'password';
         let qrSessionId = '';
         let localStream = null;
+        let activeGroupData = null;
 
         document.getElementById('tab-login').addEventListener('click', () => switchAuthTab('login'));
         document.getElementById('tab-register').addEventListener('click', () => switchAuthTab('register'));
         document.getElementById('btn-qr-mode').addEventListener('click', triggerQrMode);
+        document.getElementById('btn-pk-mode').addEventListener('click', triggerPasskeyLogin);
         document.getElementById('auth-submit-btn').addEventListener('click', handleAuthEngineSubmit);
-        document.getElementById('my-avatar-icon').addEventListener('click', () => openModal('profile-modal'));
+        document.getElementById('my-avatar-icon').addEventListener('click', openProfileModalView);
         document.getElementById('nav-settings-icon').addEventListener('click', () => openModal('settings-modal'));
         document.getElementById('nav-logout-icon').addEventListener('click', handleLogout);
         document.getElementById('open-group-modal-btn').addEventListener('click', () => openModal('group-modal'));
+        document.getElementById('submit-group-btn').addEventListener('click', createGroupCoreSubmit);
         document.getElementById('send-msg-btn').addEventListener('click', emitMessageZone);
         document.getElementById('call-audio-btn').addEventListener('click', () => initiateCallStream('audio'));
         document.getElementById('call-video-btn').addEventListener('click', () => initiateCallStream('video'));
         document.getElementById('end-call-btn').addEventListener('click', endCallStream);
-        document.getElementById('target-id-input').addEventListener('keyup', executeLiveDatabaseSearch);
         document.getElementById('file-upload-input').addEventListener('change', function() { handleDirectFileUpload(this); });
         document.getElementById('setting-theme').addEventListener('change', function() { toggleThemeModeState(this.value); });
+        document.getElementById('btn-gen-passkey').addEventListener('click', generatePasskeyString);
+        document.getElementById('save-profile-btn').addEventListener('click', saveUserProfileEngine);
+        document.getElementById('lock-acc-btn').addEventListener('click', triggerLockScreenState);
+        document.getElementById('btn-group-manage').addEventListener('click', openGroupManagementModalView);
+        document.getElementById('btn-save-group-manage').addEventListener('click', saveGroupSettingsEngine);
+        document.getElementById('btn-sync-qr-other').addEventListener('click', triggerScanOtherDeviceLogin);
         document.querySelectorAll('.btn-close-modal').forEach(btn => btn.addEventListener('click', closeAllModals));
 
         socket.on('system_notification', (data) => {
@@ -255,11 +291,9 @@
             document.getElementById('form-auth-fields').style.display = 'block';
             document.getElementById('otp-area').style.display = 'none';
             document.getElementById('qr-zone').style.display = 'none';
-            currentSubMode = 'password';
         }
 
         function triggerQrMode() {
-            currentSubMode = 'qr';
             document.getElementById('form-auth-fields').style.display = 'none';
             document.getElementById('qr-zone').style.display = 'flex';
             document.getElementById('qrcode-canvas').innerHTML = '';
@@ -274,6 +308,28 @@
             });
         });
 
+        socket.on('qr_login_authenticated', (data) => {
+            token = data.token;
+            localStorage.setItem('gold_token', token);
+            validateCurrentSessionToken();
+        });
+
+        async function triggerPasskeyLogin() {
+            const pk = prompt("Nhập token khóa bảo mật Passkey của bạn:");
+            if (!pk) return;
+            const res = await fetch('/api/auth/passkey-login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ passkey: pk })
+            });
+            const data = await res.json();
+            if (data.token) {
+                token = data.token;
+                localStorage.setItem('gold_token', token);
+                validateCurrentSessionToken();
+            } else { alert(data.error); }
+        }
+
         async function handleAuthEngineSubmit() {
             const email = document.getElementById('email').value.trim();
             const password = document.getElementById('password').value;
@@ -282,21 +338,15 @@
                 const otpCode = document.getElementById('otp-code').value.trim();
                 if (document.getElementById('otp-area').style.display === 'none') {
                     if (!email) { alert("Vui lòng nhập Email."); return; }
-                    try {
-                        const res = await fetch('https://api.dashshare.pages.dev/chatverify', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ to: email })
-                        });
-                        if (res.ok) {
-                            document.getElementById('otp-area').style.display = 'block';
-                            alert("Cổng OTP đã mở, vui lòng kiểm tra email.");
-                        } else {
-                            alert("Không thể mở cổng OTP hệ sinh thái.");
-                        }
-                    } catch (e) {
-                        alert("Lỗi kết nối nghiêm trọng đến cổng bảo mật DashShare.");
-                    }
+                    const res = await fetch('https://api.dashshare.pages.dev/chatverify', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ to: email })
+                    });
+                    if (res.ok) {
+                        document.getElementById('otp-area').style.display = 'block';
+                        alert("Mã OTP đã được gửi, hãy kiểm tra email của bạn.");
+                    } else { alert("Không thể gửi OTP."); }
                     return;
                 }
                 
@@ -307,11 +357,9 @@
                 });
                 const data = await res.json();
                 if (data.success) {
-                    alert("Đăng ký thành công định danh 15 số! Vui lòng Đăng nhập.");
+                    alert("Đăng ký thành công định danh 15 số! Hãy Đăng nhập.");
                     switchAuthTab('login');
-                } else {
-                    alert(data.error || "Mã OTP không chính xác.");
-                }
+                } else { alert(data.error || "Mã OTP sai."); }
             } else {
                 const res = await fetch('/api/auth/login', {
                     method: 'POST',
@@ -323,18 +371,42 @@
                     token = data.token;
                     localStorage.setItem('gold_token', token);
                     validateCurrentSessionToken();
-                } else {
-                    alert(data.error || "Đăng nhập thất bại.");
-                }
+                } else { alert(data.error || "Sai tài khoản."); }
             }
         }
 
-        function validateCurrentSessionToken() {
-            document.getElementById('auth-screen').style.display = 'none';
-            document.getElementById('app-screen').style.display = 'flex';
-            currentUser = { id: "15_NUMERIC_ID", name: "DashShare Gold User" };
-            socket.emit('join_room', currentUser.id);
-            syncSidebarComponents();
+        async function validateCurrentSessionToken() {
+            const res = await fetch('/api/profile/update', {
+                method: 'POST',
+                headers: { 'Authorization': 'Bearer ' + token },
+                body: new FormData()
+            });
+            const data = await res.json();
+            if (data.user) {
+                currentUser = data.user;
+                if (currentUser.is_locked) {
+                    const checkPin = prompt("Tài khoản đã bị khóa bằng mã 4 số. Vui lòng nhập mã PIN bảo mật để vào:");
+                    if (checkPin !== currentUser.pin) {
+                        alert("Mã PIN sai! Đã từ chối truy cập.");
+                        handleLogout();
+                        return;
+                    }
+                }
+                document.getElementById('auth-screen').style.display = 'none';
+                document.getElementById('app-screen').style.display = 'flex';
+                document.getElementById('my-avatar-icon').innerText = currentUser.name.substring(0,2).toUpperCase();
+                if (currentUser.avatar) document.getElementById('my-avatar-icon').style.backgroundImage = `url('${currentUser.avatar}')`;
+                
+                document.getElementById('prof-name').value = currentUser.name;
+                document.getElementById('prof-bio').value = currentUser.bio;
+                document.getElementById('setting-theme').value = currentUser.theme;
+                document.getElementById('setting-pin').value = currentUser.pin;
+                document.getElementById('setting-passkey').value = currentUser.passkey;
+                toggleThemeModeState(currentUser.theme);
+
+                socket.emit('join_room', currentUser.id);
+                syncSidebarComponents();
+            } else { handleLogout(); }
         }
 
         function syncSidebarComponents() {
@@ -344,36 +416,46 @@
                 const friendContainer = document.getElementById("sidebar-friends-root");
                 groupContainer.innerHTML = ""; friendContainer.innerHTML = "";
 
-                const appendDOMItem = (container, item, isGroup) => {
-                    const div = document.createElement("div");
-                    div.className = "session-item";
-                    div.addEventListener('click', () => {
-                        document.querySelectorAll('.session-item').forEach(el => el.classList.remove('active'));
-                        div.classList.add('active');
-                        selectActiveSessionRow(item.id, isGroup, item.name);
-                    });
-                    div.innerHTML = `
-                        <div class="session-avatar" style="background-image:url('${item.avatar || item.icon || ''}')">
-                            ${(item.avatar || item.icon) ? '' : item.name.substring(0,2).toUpperCase()}
-                        </div>
-                        <div style="flex:1;">
-                            <div style="font-weight:bold; font-size:13px;">${item.name}</div>
-                            <div style="font-size:11px; color:var(--text-sub);">ID: ${item.id}</div>
-                        </div>
-                    `;
-                    container.appendChild(div);
-                };
-                if (data.groups) data.groups.forEach(g => appendDOMItem(groupContainer, g, true));
-                if (data.friends) data.friends.forEach(f => appendDOMItem(friendContainer, f, false));
-            }).catch(() => {});
+                data.groups.forEach(g => appendDOMItem(groupContainer, g, true));
+                data.friends.forEach(f => appendDOMItem(friendContainer, f, false));
+            });
         }
 
-        function selectActiveSessionRow(id, isGroup, displayName) {
+        function appendDOMItem(container, item, isGroup) {
+            const div = document.createElement("div");
+            div.className = "session-item";
+            div.addEventListener('click', () => {
+                document.querySelectorAll('.session-item').forEach(el => el.classList.remove('active'));
+                div.classList.add('active');
+                selectActiveSessionRow(item.id, isGroup, item.name, item);
+            });
+            div.innerHTML = `
+                <div class="session-avatar" style="background-image:url('${item.avatar || item.icon || ''}')">
+                    ${(item.avatar || item.icon) ? '' : item.name.substring(0,2).toUpperCase()}
+                </div>
+                <div style="flex:1;">
+                    <div style="font-weight:bold; font-size:13px;">${item.name}</div>
+                    <div style="font-size:11px; color:var(--text-sub);">ID: ${item.id}</div>
+                </div>
+            `;
+            container.appendChild(div);
+        }
+
+        function selectActiveSessionRow(id, isGroup, displayName, fullItem) {
             activeTargetId = id;
             isGroupActive = isGroup;
+            activeGroupData = isGroup ? fullItem : null;
+            
             document.getElementById('active-chat-title').innerText = displayName;
             document.getElementById('active-chat-route-info').innerText = isGroup ? `/group/${id}` : `/people/${id}`;
             document.getElementById('call-actions').style.display = isGroup ? 'none' : 'flex';
+            
+            if (isGroup && fullItem.creator === currentUser.id) {
+                document.getElementById('btn-group-manage').style.display = 'block';
+            } else {
+                document.getElementById('btn-group-manage').style.display = 'none';
+            }
+
             document.getElementById('msg-panel').innerHTML = '';
             socket.emit('join_room', id);
         }
@@ -385,8 +467,8 @@
 
             socket.emit('msg_send', {
                 chat_id: activeTargetId,
-                sender_id: currentUser?.id,
-                sender_name: currentUser?.name,
+                sender_id: currentUser.id,
+                sender_name: currentUser.name,
                 text: text,
                 file_url: ''
             });
@@ -396,10 +478,14 @@
         socket.on('msg_receive', (data) => {
             if (data.chat_id !== activeTargetId) return;
             const panel = document.getElementById('msg-panel');
-            const isMe = data.sender_id === currentUser?.id;
+            const isMe = data.sender_id === currentUser.id;
             let content = data.text;
             if (data.file_url) {
-                content = `<a href="${data.file_url}" target="_blank" style="color:var(--gold-dark); font-weight:bold;"><i class="fa-solid fa-file-arrow-down"></i> Tải tập tin đính kèm</a>`;
+                if (data.file_url.match(/\.(jpeg|jpg|gif|png)$/i)) {
+                    content = `<img src="${data.file_url}" style="max-width:200px; border-radius:6px; margin-top:5px; display:block;">`;
+                } else {
+                    content = `<a href="${data.file_url}" target="_blank" style="color:var(--gold-dark); font-weight:bold;"><i class="fa-solid fa-file-arrow-down"></i> Tải tập tin đính kèm</a>`;
+                }
             }
             panel.innerHTML += `
                 <div class="msg-row ${isMe ? 'me' : ''}">
@@ -412,35 +498,138 @@
             panel.scrollTop = panel.scrollHeight;
         });
 
+        async function saveUserProfileEngine() {
+            const formData = new FormData();
+            formData.append('name', document.getElementById('prof-name').value);
+            formData.append('bio', document.getElementById('prof-bio').value);
+            formData.append('theme', document.getElementById('setting-theme').value);
+            formData.append('pin', document.getElementById('setting-pin').value);
+            if (document.getElementById('prof-avatar-file').files[0]) formData.append('avatar', document.getElementById('prof-avatar-file').files[0]);
+            if (document.getElementById('prof-cover-file').files[0]) formData.append('cover', document.getElementById('prof-cover-file').files[0]);
+
+            const res = await fetch('/api/profile/update', {
+                method: 'POST',
+                headers: { 'Authorization': 'Bearer ' + token },
+                body: formData
+            });
+            if (res.ok) { alert("Cập nhật hồ sơ thành công!"); validateCurrentSessionToken(); closeAllModals(); }
+        }
+
+        async function createGroupCoreSubmit() {
+            const name = document.getElementById('group-name-input').value.trim();
+            if (!name) return;
+            const res = await fetch('/api/groups/create', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+                body: JSON.stringify({ name })
+            });
+            if (res.ok) { alert("Tạo nhóm thành công!"); syncSidebarComponents(); closeAllModals(); }
+        }
+
+        function openProfileModalView() {
+            fetch(`/people/${currentUser.id}`).then(r => r.json()).then(data => {
+                document.getElementById('lbl-route-people').innerText = `/people/${data.id}`;
+                document.getElementById('lbl-share-people').innerText = `${window.location.origin}/share/${data.share_id}`;
+                document.getElementById('lbl-share-people').href = `/share/${data.share_id}`;
+                openModal('profile-modal');
+            });
+        }
+
+        function openGroupManagementModalView() {
+            if (!activeGroupData) return;
+            fetch(`/group/${activeGroupData.id}`).then(r => r.json()).then(data => {
+                document.getElementById('lbl-route-group').innerText = `/group/${data.id}`;
+                document.getElementById('lbl-share-group').innerText = `${window.location.origin}/share/${data.share_id}`;
+                document.getElementById('lbl-share-group').href = `/share/${data.share_id}`;
+                document.getElementById('g-manage-name').value = data.name;
+                document.getElementById('g-manage-bio').value = data.bio;
+                openModal('group-manage-modal');
+            });
+        }
+
+        async function saveGroupSettingsEngine() {
+            const formData = new FormData();
+            formData.append('group_id', activeGroupData.id);
+            formData.append('name', document.getElementById('g-manage-name').value);
+            formData.append('bio', document.getElementById('g-manage-bio').value);
+            if (document.getElementById('g-manage-icon-file').files[0]) formData.append('icon', document.getElementById('g-manage-icon-file').files[0]);
+            if (document.getElementById('g-manage-cover-file').files[0]) formData.append('cover', document.getElementById('g-manage-cover-file').files[0]);
+
+            const res = await fetch('/api/groups/update', {
+                method: 'POST',
+                headers: { 'Authorization': 'Bearer ' + token },
+                body: formData
+            });
+            if (res.ok) { alert("Cập nhật nhóm thành công!"); syncSidebarComponents(); closeAllModals(); }
+        }
+
+        async function handleDirectFileUpload(input) {
+            const file = input.files[0];
+            if (!file || !activeTargetId) return;
+            const formData = new FormData();
+            formData.append('avatar', file);
+
+            const res = await fetch('/api/profile/update', {
+                method: 'POST',
+                headers: { 'Authorization': 'Bearer ' + token },
+                body: formData
+            });
+            const data = await res.json();
+            socket.emit('msg_send', {
+                chat_id: activeTargetId, sender_id: currentUser.id, sender_name: currentUser.name, text: file.name, file_url: data.user.avatar
+            });
+        }
+
+        function triggerScanOtherDeviceLogin() {
+            const rawScan = prompt("Sử dụng Camera quét mã QR ứng dụng trên máy kia rồi nhập chuỗi nội dung JSON kết quả vào đây:");
+            if (!rawScan) return;
+            try {
+                const parsed = JSON.parse(rawScan);
+                if (parsed.action === "dashshare_qr_login" && parsed.sessionId) {
+                    socket.emit('scan_qr_success', { qrSessionId: parsed.sessionId, token: token });
+                    alert("Ủy quyền đồng bộ mã đăng nhập máy xa thành công!");
+                }
+            } catch (e) { alert("Mã QR không đúng định dạng!"); }
+        }
+
+        async function triggerLockScreenState() {
+            const pin = document.getElementById('setting-pin').value;
+            if (pin.length !== 4) { alert("Vui lòng thiết lập Mã khóa bảo vệ 4 số trước."); return; }
+            const formData = new FormData();
+            formData.append('is_locked', 1);
+            await fetch('/api/profile/update', { method: 'POST', headers: { 'Authorization': 'Bearer ' + token }, body: formData });
+            alert("Đã khóa màn hình!"); handleLogout();
+        }
+
+        function generatePasskeyString() {
+            const pk = "GOLD-" + Math.random().toString(36).substring(2, 15).toUpperCase();
+            document.getElementById('setting-passkey').value = pk;
+            const formData = new FormData();
+            formData.append('passkey', pk);
+            fetch('/api/profile/update', { method: 'POST', headers: { 'Authorization': 'Bearer ' + token }, body: formData });
+        }
+
         async function initiateCallStream(type) {
             document.getElementById('call-zone').style.display = 'block';
             localStream = await navigator.mediaDevices.getUserMedia({ video: type === 'video', audio: true });
             document.getElementById('local-video').srcObject = localStream;
-            socket.emit('call_initiate', { target_id: activeTargetId, sender_id: currentUser.id, type: type, signal: null });
+            socket.emit('call_initiate', { target_id: activeTargetId, sender_id: currentUser.id, type });
         }
+
+        socket.on('call_incoming', (data) => {
+            if (confirm(`Cuộc gọi đến từ đối tác ${data.from}. Đồng ý nhận?`)) {
+                initiateCallStream(data.type);
+            }
+        });
 
         function endCallStream() {
-            if (localStream) localStream.getTracks().forEach(track => track.stop());
+            if (localStream) localStream.getTracks().forEach(t => t.stop());
             document.getElementById('call-zone').style.display = 'none';
-        }
-
-        function executeLiveDatabaseSearch() {
-            const val = document.getElementById('target-id-input').value.trim();
-            const dropdown = document.getElementById('search-result-dropdown');
-            if (val.length < 3) { dropdown.style.display = 'none'; return; }
-            dropdown.style.display = 'flex';
-            document.getElementById('search-res-name').innerText = "Đối tượng: " + val;
-            document.getElementById('search-res-id').innerText = val;
-            document.getElementById('search-action-btn').innerText = "KẾT NỐI CHAT";
-            document.getElementById('search-action-btn').onclick = () => {
-                selectActiveSessionRow(val, false, "Liên kết ID: " + val);
-                dropdown.style.display = 'none';
-            };
         }
 
         function openModal(id) { document.getElementById(id).style.display = 'flex'; }
         function closeAllModals() { document.querySelectorAll('.modal-overlay').forEach(m => m.style.display = 'none'); }
-        function toggleThemeModeState(theme) { document.body.className = theme === 'dark' ? 'dark-theme-mode' : 'light-theme-mode'; }
+        function toggleThemeModeState(t) { document.body.className = t === 'dark' ? 'dark-theme-mode' : 'light-theme-mode'; }
         function handleLogout() { localStorage.removeItem('gold_token'); window.location.reload(); }
     </script>
 </body>
