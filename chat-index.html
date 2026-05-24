@@ -3,14 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DashShare Gold Platform</title>
+    <title>DashShare Gold</title>
     <script src="/socket.io/socket.io.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <script src="https://unpkg.com/html5-qrcode"></script>
     <style>
         :root {
-            --gold-light-pastel: #fef08a; /* Vàng nhạt dịu mắt cực đẹp */
+            --gold-light-pastel: #fef08a;
             --gold-primary: #eab308;
             --gold-dark: #a16207;
             --bg-sidebar: #1e1b4b; --bg-left-panel: #ffffff; --bg-chat: #f8fafc;
@@ -24,33 +24,31 @@
         .auth-card { background: #ffffff; padding: 35px; border-radius: 16px; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.05); width: 90%; max-width: 420px; text-align: center; border: 1px solid var(--border-color); }
         .auth-input { width: 100%; padding: 12px 16px; margin: 8px 0; border: 1px solid #cbd5e1; border-radius: 8px; outline: none; font-size: 14px; }
         .auth-submit { width: 100%; padding: 12px; background: var(--gold-primary); color: #fff; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; margin-top: 10px; transition: 0.2s; }
-        .auth-submit:hover { background: var(--gold-dark); }
         
         .app-layout { display: none; width: 100%; height: 100%; }
         .nav-sidebar { width: 68px; background: var(--bg-sidebar); display: flex; flex-direction: column; align-items: center; padding: 24px 0; gap: 24px; }
-        .nav-avatar { width: 46px; height: 46px; border-radius: 50%; background: var(--gold-primary); background-size: cover; background-position: center; cursor: pointer; }
+        .nav-avatar { width: 46px; height: 46px; border-radius: 50%; background-size: cover; background-position: center; cursor: pointer; border: 2px solid var(--gold-light-pastel); }
         .nav-item { font-size: 22px; color: rgba(255,255,255,0.5); cursor: pointer; padding: 12px 0; width: 100%; text-align: center; }
         .nav-item.active { color: var(--gold-primary); background: rgba(255,255,255,0.08); }
         
         .list-panel { width: 340px; background: var(--bg-left-panel); border-right: 1px solid var(--border-color); display: flex; flex-direction: column; }
         .search-box { padding: 16px; display: flex; gap: 10px; border-bottom: 1px solid var(--border-color); }
         .chat-list { flex: 1; overflow-y: auto; }
-        .chat-item { padding: 14px; border-bottom: 1px solid var(--border-color); cursor: pointer; display: flex; align-items: center; gap: 12px; }
+        .chat-item { padding: 14px; border-bottom: 1px solid var(--border-color); cursor: pointer; }
         .chat-item.active { background: var(--gold-light-pastel); }
         
         .chat-main { flex: 1; display: flex; flex-direction: column; background: var(--bg-chat); }
         .chat-header { padding: 16px 24px; background: #fff; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; }
         .msg-area { flex: 1; padding: 24px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; }
-        .msg-bubble { max-width: 65%; padding: 12px 16px; border-radius: 12px; background: #fff; border: 1px solid var(--border-color); font-size: 14px; line-height: 1.5; }
-        .msg-row { display: flex; } .msg-row.me { justify-content: flex-end; } .msg-row.me .msg-bubble { background: var(--gold-light-pastel); border-color: var(--gold-primary); }
+        .msg-bubble { max-width: 65%; padding: 12px 16px; border-radius: 12px; background: #fff; border: 1px solid var(--border-color); font-size: 14px; }
+        .msg-row { display: flex; } .msg-row.me { justify-content: flex-end; } .msg-row.me .msg-bubble { background: var(--gold-light-pastel); }
         
-        .input-bar { padding: 16px; background: #fff; border-top: 1px solid var(--border-color); display: flex; gap: 12px; align-items: center; }
+        .input-bar { padding: 16px; background: #fff; border-top: 1px solid var(--border-color); display: flex; gap: 12px; }
         .input-bar input { flex: 1; padding: 12px; border: 1px solid #cbd5e1; border-radius: 8px; outline: none; }
         
         .modal { position: fixed; inset: 0; background: rgba(15,23,42,0.4); display: none; justify-content: center; align-items: center; z-index: 10000; backdrop-filter: blur(4px); }
-        .modal-card { background: #fff; padding: 28px; border-radius: 16px; width: 92%; max-width: 480px; max-height: 90vh; overflow-y: auto; }
-        label { font-size: 13px; font-weight: 600; color: var(--text-sub); display: block; margin-top: 12px; }
-        .preview-img { width: 70px; height: 70px; object-fit: cover; border-radius: 50%; border: 2px solid var(--gold-primary); margin-top: 5px; }
+        .modal-card { background: #fff; padding: 28px; border-radius: 16px; width: 92%; max-width: 480px; }
+        .qr-display-wrapper { display: flex; justify-content: center; padding: 15px; background: #f8fafc; border-radius: 8px; margin: 10px 0; }
     </style>
 </head>
 <body>
@@ -58,7 +56,7 @@
     <div id="app-lock-screen">
         <i class="fa-solid fa-lock" style="font-size: 48px; color: var(--gold-primary); margin-bottom: 15px;"></i>
         <h2>Hệ thống đang khóa</h2>
-        <input type="password" id="lock-pin-input" maxlength="4" style="text-align: center; font-size: 24px; width: 160px; padding: 10px; margin-top: 15px; border-radius: 8px;" placeholder="****">
+        <input type="password" id="lock-pin-input" maxlength="4" style="text-align: center; font-size: 24px; width: 160px; padding: 10px; margin-top: 15px;" placeholder="****">
         <button id="btn-unlock-app" class="auth-submit" style="width: 160px;">MỞ KHÓA</button>
     </div>
 
@@ -66,12 +64,10 @@
         <div class="auth-card">
             <h2 style="color: var(--gold-dark); margin-bottom: 15px;" id="auth-title">DashShare Gold</h2>
             <input type="text" id="auth-name" class="auth-input" placeholder="Tên hiển thị thành viên" style="display: none;">
-            <input type="email" id="auth-email" class="auth-input" placeholder="Địa chỉ Email chính xác">
-            <input type="password" id="auth-password" class="auth-input" placeholder="Mật khẩu bảo mật">
-            <button id="btn-submit-auth" class="auth-submit">ĐĂNG NHẬP THƯỜNG</button>
+            <input type="email" id="auth-email" class="auth-input" placeholder="Địa chỉ Email của bạn">
+            <input type="password" id="auth-password" class="auth-input" placeholder="Mật khẩu">
+            <button id="btn-submit-auth" class="auth-submit">ĐĂNG NHẬP</button>
             <p id="link-switch-auth" style="font-size:13px; margin-top:15px; color:var(--gold-dark); cursor:pointer;">Chưa có tài khoản? Đăng ký ngay</p>
-            <hr style="margin:20px 0; border:none; border-top:1px solid #eee;">
-            <button class="auth-submit" id="btn-login-passkey" style="background:#0f172a;"><i class="fa-solid fa-fingerprint"></i> ĐĂNG NHẬP PASSKEY</button>
         </div>
     </div>
 
@@ -105,62 +101,56 @@
             </div>
             
             <div id="chat-camera-zone" style="display:none; padding:15px; background:#fff; border-bottom:1px solid #e2e8f0; text-align:center;">
-                <div id="reader" style="width:280px; margin:0 auto; border-radius:8px; overflow:hidden;"></div>
-                <button onclick="stopCameraScanner()" style="margin-top:10px; padding:6px 12px; background:#ef4444; color:#fff; border:none; border-radius:4px; cursor:pointer;">Đóng Camera</button>
+                <div id="reader" style="width:250px; margin:0 auto;"></div>
+                <button onclick="stopCameraScanner()" style="margin-top:10px; padding:6px 12px; background:#ef4444; color:#fff; border:none; border-radius:4px; cursor:pointer;">Tắt Camera</button>
             </div>
 
             <div class="msg-area" id="msg-box"></div>
             <div class="input-bar">
-                <input type="file" id="chat-file-upload" style="display:none;" onchange="handleDirectFileUpload(this)">
-                <button onclick="document.getElementById('chat-file-upload').click()" style="background:none; border:none; font-size:20px; cursor:pointer; color:var(--text-sub); margin-right:5px;"><i class="fa-solid fa-paperclip"></i></button>
-                <input type="text" id="msg-input" placeholder="Nhập bản tin nhắn...">
-                <button id="btn-send" class="auth-submit" style="width:auto; margin-top:0; padding:0 20px; height:42px;">GỬI</button>
+                <input type="text" id="msg-input" placeholder="Nhập tin nhắn...">
+                <button id="btn-send" class="auth-submit" style="width:auto; margin-top:0; padding:0 20px;">GỬI</button>
             </div>
         </div>
     </div>
 
     <div class="modal" id="group-manage-modal">
         <div class="modal-card">
-            <h3>Cấu hình quản lý nhóm trưởng</h3>
-            <div style="font-size:12px; margin:10px 0; padding:10px; background:#f8fafc; border-radius:8px; border:1px solid #e2e8f0; line-height:1.6;">
-                <p><b>Định danh nhóm công khai:</b> <span id="g-route" style="color:blue;">-</span></p>
-                <p><b>Link hệ thống gốc:</b> <br><span id="g-full-link" style="color:#64748b; word-break:break-all;">-</span></p>
-                <p><b>Link liên kết rút gọn:</b> <br><a id="g-short-link" href="#" target="_blank" style="color:var(--gold-dark); font-weight:bold; word-break:break-all;">-</a></p>
+            <h3>Cấu hình quản lý nhóm nâng cao</h3>
+            <div style="font-size:12px; margin:10px 0; padding:10px; background:#f8fafc; border-radius:8px; border:1px solid #e2e8f0;">
+                <p><b>Link liên kết rút gọn của nhóm:</b> <br><a id="g-short-link" href="#" target="_blank" style="color:var(--gold-dark); font-weight:bold;">-</a></p>
             </div>
-            <label>Tên nhóm chat:</label>
+            <div class="qr-display-wrapper"><div id="group-qr-container"></div></div>
+            <label style="font-size:12px; font-weight:600; display:block; margin-top:10px;">Tên nhóm:</label>
             <input type="text" id="g-name-edit" class="auth-input">
-            <label>Mô tả nội quy nhóm:</label>
+            <label style="font-size:12px; font-weight:600; display:block; margin-top:10px;">Mô tả nhóm:</label>
             <input type="text" id="g-bio-edit" class="auth-input">
-            
-            <label>Biểu tượng nhóm (Icon):</label>
+            <label style="font-size:12px; font-weight:600; display:block; margin-top:10px;">Hình đại diện nhóm (Icon):</label>
             <input type="file" id="g-icon-file" class="auth-input" accept="image/*">
-            
-            <label>Ảnh bìa nhóm (Cover):</label>
+            <label style="font-size:12px; font-weight:600; display:block; margin-top:10px;">Ảnh bìa nhóm (Cover):</label>
             <input type="file" id="g-cover-file" class="auth-input" accept="image/*">
             
-            <button class="auth-submit" id="btn-save-group-settings">LƯU CẤU HÌNH NHÓM</button>
+            <button class="auth-submit" id="btn-save-group-settings">LƯU THAY ĐỔI</button>
             <button class="auth-submit btn-close" style="background:#94a3b8; margin-top:5px;">Hủy bỏ</button>
         </div>
     </div>
 
     <div class="modal" id="profile-modal">
         <div class="modal-card">
-            <h3>Cài đặt Hồ sơ tài khoản</h3>
+            <h3>Cập nhật hồ sơ tài khoản</h3>
             <div style="font-size:12px; margin:10px 0; padding:10px; background:#f8fafc; border-radius:8px; border:1px solid #e2e8f0;">
-                <p><b>Mã liên kết rút gọn cá nhân:</b> <br><a id="u-short-link" href="#" target="_blank" style="font-weight:bold; color:var(--gold-dark);"></a></p>
+                <p><b>Link rút gọn cá nhân:</b> <br><a id="u-short-link" href="#" target="_blank" style="font-weight:bold; color:var(--gold-dark);"></a></p>
             </div>
-            <label>Tên thành viên:</label>
+            <div class="qr-display-wrapper"><div id="user-qr-container"></div></div>
+            <label style="font-size:12px; font-weight:600; display:block; margin-top:10px;">Tên thành viên:</label>
             <input type="text" id="p-name" class="auth-input">
-            <label>Tiểu sử cá nhân:</label>
+            <label style="font-size:12px; font-weight:600; display:block; margin-top:10px;">Tiểu sử:</label>
             <input type="text" id="p-bio" class="auth-input">
-            
-            <label>Hình đại diện (Avatar):</label>
+            <label style="font-size:12px; font-weight:600; display:block; margin-top:10px;">Hình đại diện (Avatar):</label>
             <input type="file" id="p-avatar-file" class="auth-input" accept="image/*">
-            
-            <label>Hình ảnh bìa cá nhân (Cover Photo):</label>
+            <label style="font-size:12px; font-weight:600; display:block; margin-top:10px;">Ảnh bìa (Cover Photo):</label>
             <input type="file" id="p-cover-file" class="auth-input" accept="image/*">
 
-            <button class="auth-submit" id="btn-save-profile">CẬP NHẬT TÀI KHOẢN</button>
+            <button class="auth-submit" id="btn-save-profile">CẬP NHẬT TRẠNG THÁI</button>
             <button class="auth-submit btn-close" style="background:#94a3b8; margin-top:5px;">Hủy bỏ</button>
         </div>
     </div>
@@ -168,7 +158,7 @@
     <div class="modal" id="group-create-modal">
         <div class="modal-card">
             <h3>Khởi tạo nhóm làm việc mới</h3>
-            <input type="text" id="new-group-name" class="auth-input" placeholder="Nhập tên phòng nhóm...">
+            <input type="text" id="new-group-name" class="auth-input" placeholder="Nhập tên nhóm...">
             <button class="auth-submit" id="btn-confirm-create-group">XÁC NHẬN TẠO</button>
             <button class="auth-submit btn-close" style="background:#94a3b8; margin-top:5px;">Đóng</button>
         </div>
@@ -176,31 +166,32 @@
 
     <div class="modal" id="settings-modal">
         <div class="modal-card">
-            <h3>Bảo mật hệ thống</h3>
-            <label>Cấu hình PIN màn hình khóa (4 chữ số):</label>
-            <input type="password" id="set-pin" class="auth-input" maxlength="4" placeholder="Nhập 4 số PIN">
-            <button class="auth-submit" id="btn-register-passkey-device" style="background:#0f172a;">LIÊN KẾT PASSKEY THIẾT BỊ</button>
-            <button class="auth-submit" id="btn-trigger-lock" style="background:#ef4444; margin-top:10px;">KÍCH HOẠT KHÓA NGAY</button>
+            <h3>Bảo mật ứng dụng</h3>
+            <label style="font-size:12px; font-weight:600; display:block;">Cấu hình mã bảo vệ PIN (4 chữ số):</label>
+            <input type="password" id="set-pin" class="auth-input" maxlength="4" placeholder="Nhập mã PIN">
+            <button class="auth-submit" id="btn-trigger-lock" style="background:#ef4444;">KÍCH HOẠT KHÓA NGAY</button>
             <button class="auth-submit btn-close" style="background:#94a3b8; margin-top:5px;">Đóng</button>
         </div>
     </div>
 
     <script>
+        const socket = io();
         let token = localStorage.getItem('gold_token') || '';
         let currentUser = null;
         let activeId = '';
         let activeItemData = null;
         let isRegisterMode = false;
         let html5QrCode = null;
+        let userQrDecoder = null;
+        let groupQrDecoder = null;
 
-        // Xử lý logic khởi chạy điều hướng Link rút gọn khi load trang
         window.addEventListener('DOMContentLoaded', () => {
             const pathSegments = window.location.pathname.split('/');
+            // Xử lý logic định tuyến SPA cho các liên kết rút gọn
             if (pathSegments[1] === 'share' && pathSegments[2]) {
                 fetch(`/api/share/resolve/${pathSegments[2]}`).then(r => r.json()).then(res => {
                     if (res.error) { alert(res.error); return; }
-                    alert(`Đang chuyển hướng tới kết nối: ${res.target.name}`);
-                    // Thực hiện mở cuộc trò chuyện tương ứng sau khi đăng nhập thành công
+                    alert(`Kết nối thành công tới tài khoản/nhóm: ${res.target.name}`);
                 });
             }
             if (token) initAppEngine();
@@ -209,10 +200,15 @@
         document.getElementById('user-avatar-btn').addEventListener('click', () => {
             document.getElementById('p-name').value = currentUser.name;
             document.getElementById('p-bio').value = currentUser.bio || '';
-            document.getElementById('u-short-link').innerText = window.location.origin + `/share/${currentUser.share_id || 'null'}`;
-            document.getElementById('u-short-link').href = `/share/${currentUser.share_id}`;
+            const shortUrl = window.location.origin + `/share/${currentUser.share_id}`;
+            document.getElementById('u-short-link').innerText = shortUrl;
+            document.getElementById('u-short-link').href = shortUrl;
+            
+            document.getElementById('user-qr-container').innerHTML = '';
+            new QRCode(document.getElementById('user-qr-container'), { text: shortUrl, width: 150, height: 150 });
             openModal('profile-modal');
         });
+
         document.getElementById('btn-open-settings').addEventListener('click', () => openModal('settings-modal'));
         document.getElementById('btn-create-group-modal').addEventListener('click', () => openModal('group-create-modal'));
         document.getElementById('btn-confirm-create-group').addEventListener('click', createGroupSubmit);
@@ -230,7 +226,7 @@
         function toggleAuthMode() {
             isRegisterMode = !isRegisterMode;
             document.getElementById('auth-name').style.display = isRegisterMode ? "block" : "none";
-            document.getElementById('btn-submit-auth').innerText = isRegisterMode ? "ĐĂNG KÝ TÀI KHOẢN" : "ĐĂNG NHẬP THƯỜNG";
+            document.getElementById('btn-submit-auth').innerText = isRegisterMode ? "ĐĂNG KÝ" : "ĐĂNG NHẬP";
             document.getElementById('link-switch-auth').innerText = isRegisterMode ? "Quay lại Đăng nhập" : "Chưa có tài khoản? Đăng ký ngay";
         }
 
@@ -249,20 +245,24 @@
             else alert(d.error);
         });
 
-        // --- HÀM KÍCH HOẠT QUÈT QR CAMERA NGOÀI CHAT AREA ---
         function startCameraScannerRealtime() {
             const zone = document.getElementById('chat-camera-zone');
             zone.style.display = 'block';
             html5QrCode = new Html5Qrcode("reader");
             html5QrCode.start(
                 { facingMode: "environment" }, 
-                { fps: 10, qrbox: { width: 220, height: 220 } },
+                { fps: 10, qrbox: { width: 200, height: 200 } },
                 (decodedText) => {
-                    alert(`Đã tìm thấy dữ liệu liên kết mã QR: ${decodedText}`);
+                    alert(`Quét thành công! Nội dung mã QR: ${decodedText}`);
+                    if(decodedText.includes('/share/')) {
+                        const segments = decodedText.split('/');
+                        const id = segments[segments.length - 1];
+                        window.location.href = `/share/${id}`;
+                    }
                     stopCameraScanner();
                 },
                 (err) => {}
-            ).catch(() => alert("Thiết bị thiếu phần cứng Camera hoặc chưa cấp quyền."));
+            ).catch(() => alert("Không thể truy cập camera thực tế của thiết bị."));
         }
 
         function stopCameraScanner() {
@@ -300,18 +300,21 @@
         function buildSidebarRow(root, item, isGroup) {
             const div = document.createElement('div');
             div.className = 'chat-item';
-            div.innerHTML = `<b>${isGroup ? '👥' : '👤'} ${item.name}</b><br><small style="color:var(--text-sub);">ID: ${item.id}</small>`;
+            div.innerHTML = `<strong>${isGroup ? '👥' : '👤'} ${item.name}</strong><br><small style="color:var(--text-sub);">ID: ${item.id}</small>`;
             div.onclick = () => {
                 document.querySelectorAll('.chat-item').forEach(el => el.classList.remove('active'));
                 div.classList.add('active');
                 activeId = item.id; activeItemData = item;
                 document.getElementById('chat-title').innerText = item.name;
-                document.getElementById('chat-link-info').innerText = isGroup ? `/group/${item.id}` : `/people/${item.id}`;
+                document.getElementById('chat-link-info').innerText = isGroup ? `ID Nhóm: ${item.id}` : `ID Thành viên: ${item.id}`;
                 document.getElementById('btn-manage-group-panel').style.display = (isGroup && item.creator === currentUser.id) ? 'block' : 'none';
                 
                 fetch(`/api/chat/history/${item.id}`).then(res=>res.json()).then(messages => {
                     const box = document.getElementById('msg-box'); box.innerHTML = '';
-                    messages.forEach(msg => appendMessageBubbleToBox(msg));
+                    messages.forEach(msg => {
+                        const isMe = msg.sender_id === currentUser.id;
+                        box.innerHTML += `<div class="msg-row ${isMe?'me':''}"><div class="msg-bubble"><b>${msg.sender_name}</b><br>${msg.text}</div></div>`;
+                    });
                     box.scrollTop = box.scrollHeight;
                 });
                 socket.emit('join_room', item.id);
@@ -328,25 +331,22 @@
 
         socket.on('msg_receive', (d) => {
             if(d.chat_id !== activeId) return;
-            appendMessageBubbleToBox(d);
-            document.getElementById('msg-box').scrollTop = document.getElementById('msg-box').scrollHeight;
-        });
-
-        function appendMessageBubbleToBox(d) {
             const box = document.getElementById('msg-box');
             const isMe = d.sender_id === currentUser.id;
-            let fileContent = d.file_url ? `<br><a href="${d.file_url}" target="_blank" style="color:var(--gold-dark); font-weight:bold;"><i class="fa-solid fa-file-arrow-down"></i> Tải file đính kèm</a>` : '';
-            box.innerHTML += `<div class="msg-row ${isMe?'me':''}"><div class="msg-bubble"><b>${d.sender_name}</b><br>${d.text}${fileContent}</div></div>`;
-        }
+            box.innerHTML += `<div class="msg-row ${isMe?'me':''}"><div class="msg-bubble"><b>${d.sender_name}</b><br>${d.text}</div></div>`;
+            box.scrollTop = box.scrollHeight;
+        });
 
         function openGroupManageModal() {
-            fetch(`/group/${activeItemData.id}`).then(r=>r.json()).then(data => {
-                document.getElementById('g-route').innerText = `/group/${data.id}`;
-                document.getElementById('g-full-link').innerText = window.location.origin + `/group/${data.id}`;
-                document.getElementById('g-short-link').innerText = window.location.origin + `/share/${data.share_id}`;
-                document.getElementById('g-short-link').href = `/share/${data.share_id}`;
+            fetch(`/api/group/details/${activeItemData.id}`).then(r=>r.json()).then(data => {
+                const shortUrl = window.location.origin + `/share/${data.share_id}`;
+                document.getElementById('g-short-link').innerText = shortUrl;
+                document.getElementById('g-short-link').href = shortUrl;
                 document.getElementById('g-name-edit').value = data.name;
                 document.getElementById('g-bio-edit').value = data.bio || '';
+                
+                document.getElementById('group-qr-container').innerHTML = '';
+                new QRCode(document.getElementById('group-qr-container'), { text: shortUrl, width: 150, height: 150 });
                 openModal('group-manage-modal');
             });
         }
@@ -356,12 +356,11 @@
             formData.append('group_id', activeItemData.id);
             formData.append('name', document.getElementById('g-name-edit').value);
             formData.append('bio', document.getElementById('g-bio-edit').value);
-            
             if(document.getElementById('g-icon-file').files[0]) formData.append('icon', document.getElementById('g-icon-file').files[0]);
             if(document.getElementById('g-cover-file').files[0]) formData.append('cover', document.getElementById('g-cover-file').files[0]);
 
             await fetch('/api/groups/update', { method: 'POST', headers: { 'Authorization': 'Bearer ' + token }, body: formData });
-            alert("Lưu thông tin cài đặt nhóm thành công!"); closeAllModals(); syncSidebar();
+            alert("Đã cập nhật cấu hình nhóm thành công!"); closeAllModals(); syncSidebar();
         }
 
         async function saveProfileSubmit() {
@@ -378,17 +377,6 @@
         async function createGroupSubmit() {
             await fetch('/api/groups/create', { method:'POST', headers:{'Content-Type':'application/json','Authorization':'Bearer '+token}, body: JSON.stringify({ name: document.getElementById('new-group-name').value }) });
             closeAllModals(); syncSidebar();
-        }
-
-        async function handleDirectFileUpload(inputElement) {
-            if(!inputElement.files.length || !activeId) return;
-            const formData = new FormData();
-            formData.append('file', inputElement.files[0]);
-            const res = await fetch('/api/chat/upload', { method: 'POST', body: formData });
-            const data = await res.json();
-            if(data.file_url) {
-                socket.emit('msg_send', { chat_id: activeId, sender_id: currentUser.id, sender_name: currentUser.name, text: `[Tệp đính kèm]`, file_url: data.file_url });
-            }
         }
 
         async function activateLockState() {
