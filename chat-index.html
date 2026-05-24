@@ -4,115 +4,83 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>DashShare Gold UI Platform</title>
-    <script src="/socket.io/socket.io.js"></script>
     <link rel="icon" href="https://icon.gdscdn.pages.dev/icon-main.ico" type="image/x-icon">
-    <link rel="shortcut icon" href="https://icon.gdscdn.pages.dev/icon-main.ico" type="image/x-icon">
+    <script src="/socket.io/socket.io.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <style>
-        /* CSS của bạn giữ nguyên ở đây */
+        :root { --gold-primary: #d4af37; --gold-dark: #b45309; --bg-sidebar: #1e1b4b; --bg-chat: #fefcf3; --border-color: #f3f4f6; }
+        body { margin: 0; font-family: sans-serif; display: flex; height: 100vh; overflow: hidden; background: var(--bg-chat); }
+        .auth-container { position: fixed; inset: 0; background: #fafaf9; display: flex; justify-content: center; align-items: center; z-index: 999; }
+        .auth-card { background: #fff; padding: 30px; border-radius: 8px; width: 400px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); text-align: center; }
+        .auth-input { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #ddd; border-radius: 6px; }
+        .auth-submit { width: 100%; padding: 12px; background: var(--gold-primary); color: white; border: none; cursor: pointer; font-weight: bold; }
+        .app-layout { display: none; width: 100%; height: 100%; flex-direction: row; }
+        .zalo-list-panel { width: 340px; background: #fff; border-right: 1px solid #eee; overflow-y: auto; }
+        .zalo-chat-main { flex: 1; display: flex; flex-direction: column; }
+        #toast-container { position: fixed; top: 20px; right: 20px; z-index: 9999; }
+        .toast-item { background: #1e1b4b; color: #fff; padding: 15px; border-radius: 8px; margin-bottom: 10px; }
     </style>
 </head>
 <body>
-    <div id="app-screen" class="app-layout">...</div>
+    <div id="toast-container"></div>
+    
+    <div id="auth-screen" class="auth-container">
+        <div class="auth-card">
+            <h3>Đăng nhập DashShare</h3>
+            <input type="email" id="email" class="auth-input" placeholder="Email">
+            <input type="password" id="password" class="auth-input" placeholder="Mật khẩu">
+            <button class="auth-submit" id="btn-login">ĐĂNG NHẬP</button>
+        </div>
+    </div>
+
+    <div id="app-screen" class="app-layout">
+        <div class="zalo-list-panel">
+            <div id="sidebar-groups-root"></div>
+            <div id="sidebar-friends-root"></div>
+        </div>
+        <div class="zalo-chat-main">
+            <div id="active-chat-title" style="padding:20px; border-bottom:1px solid #eee; font-weight:bold;">Chọn hội thoại</div>
+            <div id="msg-panel" style="flex:1; padding:20px; overflow-y:auto;"></div>
+            <div style="padding:15px; background:white; display:flex;">
+                <input type="text" id="type-box" style="flex:1; border:none; outline:none;" placeholder="Soạn tin nhắn...">
+                <button onclick="emitMessage()">GỬI</button>
+            </div>
+        </div>
+    </div>
 
     <script>
-const socket = io();
+        const socket = io();
 
-// 1. Cấu trúc dữ liệu và State
-let token = localStorage.getItem("token") || "";
-let activeChatId = null;
+        // Login Logic
+        document.getElementById('btn-login').addEventListener('click', () => {
+            document.getElementById('auth-screen').style.display = 'none';
+            document.getElementById('app-screen').style.display = 'flex';
+        });
 
-// 2. Logic Thông báo hệ thống (Toast)
-function showToast(message) {
-    const container = document.getElementById("toast-container");
-    const toast = document.createElement("div");
-    toast.className = "toast-item show";
-    toast.innerText = message;
-    container.appendChild(toast);
-    setTimeout(() => toast.remove(), 3000);
-}
+        // System Notification Toast
+        socket.on('system_msg', (data) => {
+            const container = document.getElementById('toast-container');
+            const div = document.createElement('div');
+            div.className = 'toast-item';
+            div.innerText = "Hệ thống: " + data.text;
+            container.appendChild(div);
+            setTimeout(() => div.remove(), 3000);
+        });
 
-// Lắng nghe sự kiện từ Server
-socket.on('system_notification', (data) => {
-    showToast(data.message);
-});
+        // Chat Logic
+        function emitMessage() {
+            const input = document.getElementById('type-box');
+            if(input.value) {
+                socket.emit('msg_send', { text: input.value, sender: 'Tôi' });
+                input.value = '';
+            }
+        }
 
-// 3. Logic Đăng nhập / Đăng ký
-async function handleAuth() {
-    const email = document.getElementById('email').value;
-    const password = document.getElementById('password').value;
-    
-    // Giả lập call API
-    const res = await fetch('/api/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password })
-    });
-    const data = await res.json();
-    
-    if (data.token) {
-        token = data.token;
-        localStorage.setItem("token", token);
-        document.getElementById('auth-screen').style.display = 'none';
-        document.getElementById('app-screen').style.display = 'flex';
-        syncSidebarComponents();
-    } else {
-        alert("Đăng nhập thất bại: " + data.error);
-    }
-}
-
-// 4. Logic Render Sidebar (Sửa lỗi dấu nháy bằng data-attribute)
-function syncSidebarComponents() {
-    fetch("/api/sidebar/list", { headers: { "Authorization": "Bearer " + token } })
-    .then(r => r.json()).then(data => {
-        const groupContainer = document.getElementById("sidebar-groups-root");
-        const friendContainer = document.getElementById("sidebar-friends-root");
-        groupContainer.innerHTML = "";
-        friendContainer.innerHTML = "";
-
-        const renderItems = (container, list, isGroup) => {
-            list.forEach(item => {
-                const div = document.createElement("div");
-                div.className = "session-item";
-                // Dùng event listener thay cho onclick=""
-                div.addEventListener("click", () => selectActiveSessionRow(item.id, isGroup, item.name));
-                
-                div.innerHTML = `
-                    <div class="session-avatar">${item.name.substring(0,2).toUpperCase()}</div>
-                    <div><strong>${item.name}</strong><br><small>ID: ${item.id}</small></div>
-                `;
-                container.appendChild(div);
-            });
-        };
-        renderItems(groupContainer, data.groups, true);
-        renderItems(friendContainer, data.friends, false);
-    });
-}
-
-// 5. Logic Chat & Gửi tin nhắn
-function selectActiveSessionRow(id, isGroup, name) {
-    activeChatId = id;
-    document.getElementById('active-chat-title').innerText = name;
-    // Load lịch sử chat...
-}
-
-function emitMessageZone() {
-    const text = document.getElementById('type-box').value;
-    if (!text || !activeChatId) return;
-    
-    socket.emit('msg_send', { chatId: activeChatId, text: text });
-    document.getElementById('type-box').value = "";
-}
-
-// Lắng nghe tin nhắn mới
-socket.on('msg_receive', (msg) => {
-    if (msg.chatId === activeChatId) {
-        const panel = document.getElementById('msg-panel');
-        panel.innerHTML += `<div class="msg-row"><div class="msg-bubble">${msg.text}</div></div>`;
-    }
-});
-
+        socket.on('msg_receive', (data) => {
+            const panel = document.getElementById('msg-panel');
+            panel.innerHTML += `<div style="padding:10px; border-bottom:1px solid #eee;"><b>${data.sender}:</b> ${data.text}</div>`;
+        });
     </script>
 </body>
 </html>
