@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DashShare Gold UI Platform</title>
+    <script src="/socket.io/socket.io.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <style>
+        /* CSS của bạn giữ nguyên ở đây */
+    </style>
+</head>
+<body>
+    <div id="app-screen" class="app-layout">...</div>
+
+    <script>
+const socket = io();
+
+// 1. Cấu trúc dữ liệu và State
+let token = localStorage.getItem("token") || "";
+let activeChatId = null;
+
+// 2. Logic Thông báo hệ thống (Toast)
+function showToast(message) {
+    const container = document.getElementById("toast-container");
+    const toast = document.createElement("div");
+    toast.className = "toast-item show";
+    toast.innerText = message;
+    container.appendChild(toast);
+    setTimeout(() => toast.remove(), 3000);
+}
+
+// Lắng nghe sự kiện từ Server
+socket.on('system_notification', (data) => {
+    showToast(data.message);
+});
+
+// 3. Logic Đăng nhập / Đăng ký
+async function handleAuth() {
+    const email = document.getElementById('email').value;
+    const password = document.getElementById('password').value;
+    
+    // Giả lập call API
+    const res = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password })
+    });
+    const data = await res.json();
+    
+    if (data.token) {
+        token = data.token;
+        localStorage.setItem("token", token);
+        document.getElementById('auth-screen').style.display = 'none';
+        document.getElementById('app-screen').style.display = 'flex';
+        syncSidebarComponents();
+    } else {
+        alert("Đăng nhập thất bại: " + data.error);
+    }
+}
+
+// 4. Logic Render Sidebar (Sửa lỗi dấu nháy bằng data-attribute)
+function syncSidebarComponents() {
+    fetch("/api/sidebar/list", { headers: { "Authorization": "Bearer " + token } })
+    .then(r => r.json()).then(data => {
+        const groupContainer = document.getElementById("sidebar-groups-root");
+        const friendContainer = document.getElementById("sidebar-friends-root");
+        groupContainer.innerHTML = "";
+        friendContainer.innerHTML = "";
+
+        const renderItems = (container, list, isGroup) => {
+            list.forEach(item => {
+                const div = document.createElement("div");
+                div.className = "session-item";
+                // Dùng event listener thay cho onclick=""
+                div.addEventListener("click", () => selectActiveSessionRow(item.id, isGroup, item.name));
+                
+                div.innerHTML = `
+                    <div class="session-avatar">${item.name.substring(0,2).toUpperCase()}</div>
+                    <div><strong>${item.name}</strong><br><small>ID: ${item.id}</small></div>
+                `;
+                container.appendChild(div);
+            });
+        };
+        renderItems(groupContainer, data.groups, true);
+        renderItems(friendContainer, data.friends, false);
+    });
+}
+
+// 5. Logic Chat & Gửi tin nhắn
+function selectActiveSessionRow(id, isGroup, name) {
+    activeChatId = id;
+    document.getElementById('active-chat-title').innerText = name;
+    // Load lịch sử chat...
+}
+
+function emitMessageZone() {
+    const text = document.getElementById('type-box').value;
+    if (!text || !activeChatId) return;
+    
+    socket.emit('msg_send', { chatId: activeChatId, text: text });
+    document.getElementById('type-box').value = "";
+}
+
+// Lắng nghe tin nhắn mới
+socket.on('msg_receive', (msg) => {
+    if (msg.chatId === activeChatId) {
+        const panel = document.getElementById('msg-panel');
+        panel.innerHTML += `<div class="msg-row"><div class="msg-bubble">${msg.text}</div></div>`;
+    }
+});
+
+    </script>
+</body>
+</html>
