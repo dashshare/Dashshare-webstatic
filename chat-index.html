@@ -409,15 +409,45 @@
         }
 
         async function registerPasskey() {
-            try {
-                const resOpts = await fetch('/api/passkey/register-options', { headers: {'Authorization': 'Bearer ' + token} }); const opts = await resOpts.json();
-                opts.challenge = Uint8Array.from(atob(opts.challenge.replace(/-/g, '+').replace(/_/g, '/')), c => c.charCodeAt(0));
-                opts.user.id = new TextEncoder().encode(opts.user.id);
-                const cred = await navigator.credentials.create({ publicKey: opts });
-                await fetch('/api/passkey/register-verify', { method: 'POST', headers: {'Content-Type': 'application/json', 'Authorization': 'Bearer '+token}, body: JSON.stringify({ id: cred.id }) });
-                alert("Đăng ký thiết bị bảo mật phần cứng thành công!");
-            } catch (err) { alert("Lỗi: " + err); }
+    try {
+        const resOpts = await fetch('/api/passkey/register-options', { 
+            method: 'POST',
+            headers: { 'Authorization': 'Bearer ' + token } 
+        }); 
+        
+        const opts = await resOpts.json();
+        if (opts.error) return alert("Lỗi: " + opts.error);
+
+        opts.challenge = Uint8Array.from(atob(opts.challenge.replace(/-/g, '+').replace(/_/g, '/')), c => c.charCodeAt(0));
+        opts.user.id = new TextEncoder().encode(opts.user.id);
+
+        const cred = await navigator.credentials.create({ publicKey: opts });
+        
+        if (cred) {
+            const resVerify = await fetch('/api/passkey/register-verify', { 
+                method: 'POST', 
+                headers: {
+                    'Content-Type': 'application/json', 
+                    'Authorization': 'Bearer ' + token
+                }, 
+                body: JSON.stringify({ 
+                    id: cred.id,
+                    rawId: btoa(String.fromCharCode.apply(null, new Uint8Array(cred.rawId)))
+                }) 
+            });
+            
+            const d = await resVerify.json(); 
+            if (d.success) {
+                alert("🎉 Đăng ký thiết bị bảo mật phần cứng thành công!");
+            } else {
+                alert("Lỗi lưu trữ: " + d.error);
+            }
         }
+    } catch (err) { 
+        console.error(err);
+        alert("Không thể khởi tạo Passkey! Lưu ý: Trình duyệt bắt buộc trang web phải chạy qua HTTPS bảo mật (Hugging Face Spaces đã có sẵn) và bạn cần cấp quyền sinh trắc học cho trình duyệt."); 
+    }
+}
 
         async function loginWithPasskey() {
             const email = document.getElementById('auth-email').value; if(!email) return alert("Nhập email!");
