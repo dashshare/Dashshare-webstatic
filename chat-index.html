@@ -25,13 +25,14 @@
         .app-layout { display: none; width: 100%; height: 100%; }
         .nav-sidebar { width: 68px; background: #1e1b4b; display: flex; flex-direction: column; align-items: center; padding: 24px 0; gap: 20px; }
         .nav-avatar { width: 44px; height: 44px; border-radius: 50%; background-size: cover; background-position: center; cursor: pointer; border: 2px solid var(--gold-light); }
-        .nav-item { font-size: 22px; color: rgba(255,255,255,0.5); cursor: pointer; text-align: center; width: 100%; padding: 10px 0; }
+        .nav-item { font-size: 22px; color: rgba(255,255,255,0.5); cursor: pointer; text-align: center; width: 100%; padding: 10px 0; position: relative; }
         .nav-item.active { color: var(--gold-primary); }
+        .badge { position: absolute; top: 2px; right: 10px; background: #ef4444; color: #fff; font-size: 10px; padding: 2px 6px; border-radius: 10px; font-weight: bold; }
         
         .list-panel { width: 320px; background: #fff; border-right: 1px solid var(--border-color); display: flex; flex-direction: column; }
         .panel-header { padding: 16px; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; }
         .chat-list { flex: 1; overflow-y: auto; }
-        .section-title { font-size: 12px; font-weight: 700; color: var(--text-sub); padding: 12px 16px 4px 16px; text-transform: uppercase; }
+        .section-title { font-size: 12px; font-weight: 700; color: var(--text-sub); padding: 12px 16px 4px 16px; text-transform: uppercase; display: flex; justify-content: space-between; align-items: center; }
         
         .chat-item { padding: 12px 16px; border-bottom: 1px solid #f8fafc; cursor: pointer; display: flex; align-items: center; gap: 10px; }
         .chat-item:hover { background: #f8fafc; }
@@ -40,6 +41,11 @@
         .content-view { flex: 1; display: flex; flex-direction: column; background: #f8fafc; }
         .chat-view-panel { display: flex; flex-direction: column; flex: 1; }
         .qr-tab-panel { display: none; flex: 1; flex-direction: column; align-items: center; justify-content: center; background: #fff; padding: 40px; }
+        
+        /* GIAO DIỆN TAB DANH BẠ VÀ NHÓM XÃ HỘI */
+        .contacts-tab-panel { display: none; flex: 1; flex-direction: column; background: #fff; padding: 24px; overflow-y: auto; }
+        .contact-card { display: flex; align-items: center; justify-content: space-between; padding: 12px; border: 1px solid var(--border-color); border-radius: 8px; margin-bottom: 8px; }
+        .sm-btn { padding: 6px 12px; border: none; border-radius: 6px; font-size: 12px; font-weight: 600; cursor: pointer; }
         
         .chat-header { padding: 16px; background: #fff; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; }
         .msg-area { flex: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 14px; }
@@ -72,15 +78,13 @@
             <h2 style="color: var(--gold-dark); margin-bottom: 20px; text-align:center;">DashShare Gold</h2>
             <input type="text" id="auth-name" class="auth-input" placeholder="Tên thành viên mới" style="display: none;">
             <input type="email" id="auth-email" class="auth-input" placeholder="Địa chỉ Email">
-            
             <div style="display: flex; gap: 8px; margin: 4px 0;">
                 <input type="text" id="auth-otp" class="auth-input" placeholder="Mã OTP 6 số" style="margin:0;">
                 <button onclick="sendAuthOtp()" style="padding:12px 15px; background:#3b82f6; color:#fff; border:none; border-radius:8px; font-size:13px; font-weight:600; cursor:pointer;">Gửi OTP</button>
             </div>
             <input type="password" id="auth-password" class="auth-input" placeholder="Mật khẩu bảo mật">
-            
             <button id="btn-submit-auth" class="auth-submit" onclick="submitAuth()">ĐĂNG NHẬP</button>
-            <button class="auth-submit" style="background:#10b981;" onclick="loginWithPasskey()"><i class="fa-solid fa-fingerprint"></i> ĐĂNG NHẬP BẰNG PASSKEY</button>
+            <button class="auth-submit" style="background:#10b981;" onclick="loginWithPasskey()"><i class="fa-solid fa-fingerprint"></i> ĐĂNG NHẬP PASSKEY</button>
             <button class="auth-submit" style="background:#475569;" onclick="openQrLoginModal()"><i class="fa-solid fa-qrcode"></i> QUÉT QR ĐĂNG NHẬP</button>
             <p onclick="toggleAuthMode()" id="switch-text" style="font-size:13px; margin-top:15px; color:var(--gold-dark); cursor:pointer; text-align:center;">Chưa có tài khoản? Đăng ký ngay</p>
         </div>
@@ -90,6 +94,10 @@
         <div class="nav-sidebar">
             <div class="nav-avatar" id="user-avatar-btn" onclick="openProfileModal()"></div>
             <div class="nav-item active" id="tab-chat-btn" onclick="switchMainTab('chat')"><i class="fa-regular fa-comment-dots"></i></div>
+            <div class="nav-item" id="tab-contacts-btn" onclick="switchMainTab('contacts')">
+                <i class="fa-regular fa-address-book"></i>
+                <span class="badge" id="req-badge" style="display:none;">0</span>
+            </div>
             <div class="nav-item" id="tab-qr-btn" onclick="switchMainTab('qr')"><i class="fa-solid fa-camera"></i></div>
             <div class="nav-item" onclick="logout()" style="margin-top: auto;"><i class="fa-solid fa-arrow-right-from-bracket"></i></div>
         </div>
@@ -100,9 +108,9 @@
                 <button onclick="openCreateGroupModal()" style="padding:6px 10px; background:var(--gold-primary); border:none; color:#fff; border-radius:6px; font-size:12px; font-weight:600; cursor:pointer;"><i class="fa-solid fa-plus"></i> Tạo Nhóm</button>
             </div>
             <div class="chat-list">
-                <div class="section-title">Nhóm của bạn</div>
+                <div class="section-title">Nhóm chat đã tham gia</div>
                 <div id="group-items"></div>
-                <div class="section-title">Người dùng</div>
+                <div class="section-title">Bạn bè trực tuyến</div>
                 <div id="friend-items"></div>
             </div>
         </div>
@@ -112,7 +120,7 @@
                 <div class="chat-header">
                     <div>
                         <h3 id="chat-title">Hệ thống DashShare</h3>
-                        <p id="chat-status" style="font-size:12px; color:var(--text-sub);">Vui lòng chọn phòng để chat</p>
+                        <p id="chat-status" style="font-size:12px; color:var(--text-sub);">Chọn phòng chat hoặc truy cập danh bạ</p>
                     </div>
                     <div id="chat-actions-box"></div>
                 </div>
@@ -120,10 +128,22 @@
                 <div class="input-bar">
                     <label for="chat-file-input" style="cursor:pointer; padding:10px; font-size:18px; color:var(--text-sub);"><i class="fa-solid fa-paperclip"></i></label>
                     <input type="file" id="chat-file-input" style="display:none;" onchange="uploadChatFile()">
-                    
-                    <input type="text" id="msg-input" placeholder="Nhập tin nhắn...">
+                    <input type="text" id="msg-input" placeholder="Nhập lời muốn nói...">
                     <button class="auth-submit" style="width:auto; margin:0; padding:0 20px;" onclick="sendMessage()">GỬI</button>
                 </div>
+            </div>
+
+            <div id="panel-contacts-view" class="contacts-tab-panel">
+                <h2 style="margin-bottom:20px; font-size:20px;"><i class="fa-regular fa-address-book"></i> Danh bạ DashShare</h2>
+                
+                <h3 class="section-title" style="padding-left:0; color:#ef4444; margin-bottom:10px;">Lời mời kết bạn đang chờ bạn duyệt</h3>
+                <div id="contacts-requests-list" style="margin-bottom:24px;"></div>
+
+                <h3 class="section-title" style="padding-left:0; margin-bottom:10px;">Bạn bè đã kết bạn (${window.location.origin}/people/:id)</h3>
+                <div id="contacts-friends-list" style="margin-bottom:24px;"></div>
+
+                <h3 class="section-title" style="padding-left:0; margin-bottom:10px;">Nhóm trò chuyện đã gia nhập (${window.location.origin}/group/:id)</h3>
+                <div id="contacts-groups-list"></div>
             </div>
 
             <div id="panel-qr-view" class="qr-tab-panel">
@@ -140,35 +160,30 @@
             <div id="p-cover-prev" class="profile-cover-preview"></div>
             <div id="p-avatar-prev" class="profile-avatar-preview"></div>
             <div style="height: 45px;"></div>
-
             <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:10px;">
                 <input type="file" id="p-avatar-file" accept="image/*" style="font-size:11px;">
                 <input type="file" id="p-cover-file" accept="image/*" style="font-size:11px;">
             </div>
-
             <label style="font-size:12px; font-weight:600;">Tên hiển thị:</label>
             <input type="text" id="p-name" class="auth-input">
             <label style="font-size:12px; font-weight:600;">Tiểu sử (Bio):</label>
             <input type="text" id="p-bio" class="auth-input">
-            <label style="font-size:12px; font-weight:600;">Đường dẫn chia sẻ (ID cố định):</label>
+            <label style="font-size:12px; font-weight:600;">Link Hồ sơ công khai chia sẻ (ID ngẫu nhiên 12 số):</label>
             <div class="link-shortener-box">
                 <span id="user-shortlink-text"></span>
                 <i class="fa-regular fa-copy" style="cursor:pointer;" onclick="copyShortLink('user-shortlink-text')"></i>
             </div>
             <label style="font-size:12px; font-weight:600;">Mã PIN (4 số):</label>
             <input type="text" id="p-pin" class="auth-input">
-            
-            <button class="auth-submit" style="background:#10b981;" onclick="registerPasskey()"><i class="fa-solid fa-key"></i> ĐĂNG KÝ PASSKEY</button>
+            <button class="auth-submit" style="background:#10b981;" onclick="registerPasskey()"><i class="fa-solid fa-key"></i> ĐĂNG KÝ PASSKEY PHẦN CỨNG</button>
             <button class="auth-submit" onclick="saveProfile()">LƯU HỒ SƠ</button>
-
             <div class="danger-zone">
                 <h4 style="color:#ef4444; font-size:13px;"><i class="fa-solid fa-triangle-exclamation"></i> Danger Zone (Vùng nguy hiểm)</h4>
                 <div class="danger-box">
-                    <p style="font-size:12px; color:#7f1d1d; margin-bottom:8px;">Khi xóa tài khoản, mọi tin nhắn, cấu hình phần cứng bảo mật Passkey và dữ liệu lưu trữ sẽ bị hủy bỏ vĩnh viễn.</p>
+                    <p style="font-size:12px; color:#7f1d1d; margin-bottom:8px;">Xóa tài khoản đồng nghĩa xóa toàn bộ thông tin đăng nhập, cấu hình khóa passkey và lịch sử tin nhắn vĩnh viễn.</p>
                     <button onclick="deleteAccount()" style="padding:8px 12px; background:#ef4444; color:#fff; border:none; border-radius:6px; font-size:11px; font-weight:600; cursor:pointer;">XÓA TÀI KHOẢN VĨNH VIỄN</button>
                 </div>
             </div>
-            
             <button class="auth-submit" style="background:#94a3b8; margin-top:10px;" onclick="closeModal('profile-modal')">Đóng</button>
         </div>
     </div>
@@ -178,7 +193,7 @@
             <h3 id="group-modal-title">Tạo nhóm mới</h3>
             <input type="file" id="g-avatar-file" accept="image/*" class="auth-input">
             <input type="text" id="g-name" class="auth-input" placeholder="Tên nhóm...">
-            <input type="text" id="g-desc" class="auth-input" placeholder="Mô tả...">
+            <input type="text" id="g-desc" class="auth-input" placeholder="Mô tả nhóm...">
             <div class="link-shortener-box" id="group-shortlink-box" style="display:none;">
                 <span id="group-shortlink-text"></span>
                 <i class="fa-regular fa-copy" style="cursor:pointer;" onclick="copyShortLink('group-shortlink-text')"></i>
@@ -190,7 +205,7 @@
 
     <div class="modal" id="qr-login-modal">
         <div class="modal-card" style="text-align:center;">
-            <h3>Mã QR Đăng nhập nhanh</h3>
+            <h3>Quét QR đăng nhập nhanh</h3>
             <div id="login-qr-container" style="display:inline-block; padding:12px; background:#fff; border-radius:8px; margin:15px 0;"></div>
             <button class="auth-submit" style="background:#94a3b8;" onclick="closeModal('qr-login-modal')">Đóng</button>
         </div>
@@ -210,33 +225,38 @@
         }
 
         async function sendAuthOtp() {
-            const email = document.getElementById('auth-email').value;
-            if(!email) return alert("Vui lòng nhập Email!");
+            const email = document.getElementById('auth-email').value; if(!email) return alert("Nhập Email!");
             const r = await fetch('/api/auth/send-otp', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ email }) });
             const d = await r.json(); alert(d.message || d.error);
         }
 
         async function submitAuth() {
-            const email = document.getElementById('auth-email').value;
-            const password = document.getElementById('auth-password').value;
-            const name = isRegisterMode ? document.getElementById('auth-name').value : "User";
-            const otp = document.getElementById('auth-otp').value;
+            const email = document.getElementById('auth-email').value; const password = document.getElementById('auth-password').value;
+            const name = isRegisterMode ? document.getElementById('auth-name').value : "User"; const otp = document.getElementById('auth-otp').value;
             const endpoint = isRegisterMode ? '/api/auth/register' : '/api/auth/login';
             const r = await fetch(endpoint, { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ email, password, name, otp }) });
             const d = await r.json();
-            if (d.token) { localStorage.setItem('gold_token', d.token); window.location.reload(); } else alert(d.error);
+            if (d.token) { localStorage.setItem('gold_token', d.token); document.cookie = `user_id=${d.user?.id || ''}; path=/`; window.location.reload(); } else alert(d.error);
         }
 
         function switchMainTab(tabName) {
             document.getElementById('tab-chat-btn').classList.remove('active');
+            document.getElementById('tab-contacts-btn').classList.remove('active');
             document.getElementById('tab-qr-btn').classList.remove('active');
+            
             document.getElementById('panel-chat-view').style.display = 'none';
+            document.getElementById('panel-contacts-view').style.display = 'none';
             document.getElementById('panel-qr-view').style.display = 'none';
 
-            if(tabName === 'chat') {
+            if (tabName === 'chat') {
                 document.getElementById('tab-chat-btn').classList.add('active');
                 document.getElementById('panel-chat-view').style.display = 'flex';
-                if(html5QrScanner) { html5QrScanner.stop().then(()=>{html5QrScanner=null;}).catch(()=>{}); }
+                closeCamera();
+            } else if (tabName === 'contacts') {
+                document.getElementById('tab-contacts-btn').classList.add('active');
+                document.getElementById('panel-contacts-view').style.display = 'flex';
+                closeCamera();
+                syncSocialContacts(); // Đồng bộ tải danh bạ thời gian thực
             } else {
                 document.getElementById('tab-qr-btn').classList.add('active');
                 document.getElementById('panel-qr-view').style.display = 'flex';
@@ -244,17 +264,19 @@
                 html5QrScanner.start({ facingMode: "environment" }, { fps: 10, qrbox: 220 }, async (txt) => {
                     if (txt.startsWith('dashshare-login:')) {
                         const r = await fetch('/api/auth/qr-authorize', { method: 'POST', headers: {'Content-Type':'application/json', 'Authorization': 'Bearer '+token}, body: JSON.stringify({ session_id: txt.split(':')[1] }) });
-                        const d = await r.json(); if(d.success) { alert("Cấp quyền thành công!"); switchMainTab('chat'); }
+                        const d = await r.json(); if(d.success) { alert("Xác thực thành công!"); switchMainTab('chat'); }
                     }
                 }, ()=>{});
             }
         }
+        function closeCamera() { if(html5QrScanner) { html5QrScanner.stop().then(()=>{html5QrScanner=null;}).catch(()=>{}); } }
 
         async function initApp() {
             const r = await fetch('/api/profile/update', { method: 'POST', headers: {'Authorization': 'Bearer ' + token}, body: new FormData() });
             const d = await r.json();
             if (d.user) {
                 currentUser = d.user;
+                document.cookie = `user_id=${currentUser.id}; path=/`;
                 document.getElementById('auth-screen').style.display = 'none';
                 document.getElementById('app-screen').style.display = 'flex';
                 document.getElementById('user-avatar-btn').style.backgroundImage = `url(${currentUser.avatar})`;
@@ -266,9 +288,11 @@
                     }
                 });
                 syncSidebar();
+                syncSocialContacts();
             }
         }
 
+        // Tải danh sách chat nhanh ở Sidebar trái (Chỉ hiện bạn bè đã kết bạn và nhóm đã tham gia)
         function syncSidebar() {
             fetch('/api/sidebar/list', { headers: {'Authorization': 'Bearer ' + token} }).then(r=>r.json()).then(data => {
                 const friendsBox = document.getElementById('friend-items'); friendsBox.innerHTML = '';
@@ -283,18 +307,61 @@
                 data.friends.forEach(f => {
                     const div = document.createElement('div'); div.className = 'chat-item';
                     div.innerHTML = `<div class="item-avatar" style="background-image:url(${f.avatar})"></div><div><b>👤 ${f.name}</b></div>`;
-                    div.onclick = () => selectChat(f.id, f.name, 'Trực tuyến', false);
+                    div.onclick = () => selectChat(f.id, f.name, 'Bạn bè', false);
                     friendsBox.appendChild(div);
                 });
             });
         }
 
+        // ĐỒNG BỘ DANH BẠ TOÀN DIỆN (TAB SOCIAL)
+        async function syncSocialContacts() {
+            const r = await fetch('/api/social/contacts', { headers: {'Authorization': 'Bearer ' + token} });
+            const data = await r.json();
+
+            // Xử lý badge lời mời kết bạn chưa duyệt
+            const badge = document.getElementById('req-badge');
+            if (data.requests.length > 0) {
+                badge.innerText = data.requests.length; badge.style.display = 'block';
+            } else { badge.style.display = 'none'; }
+
+            // Lời mời kết bạn đến
+            const reqBox = document.getElementById('contacts-requests-list'); reqBox.innerHTML = data.requests.length === 0 ? '<p style="font-size:13px; color:var(--text-sub);">Không có lời mời kết bạn nào.</p>' : '';
+            data.requests.forEach(req => {
+                const div = document.createElement('div'); div.className = 'contact-card';
+                div.innerHTML = `<div style="display:flex; align-items:center; gap:10px;"><div class="item-avatar" style="background-image:url(${req.avatar})"></div><b>${req.name}</b></div>
+                <div><button class="sm-btn" style="background:#10b981; color:#fff;" onclick="executeSocialAction('/api/social/friend-request', '${req.id}')">Chấp nhận</button></div>`;
+                reqBox.appendChild(div);
+            });
+
+            // Danh sách bạn bè chính thức
+            const friBox = document.getElementById('contacts-friends-list'); friBox.innerHTML = data.friends.length === 0 ? '<p style="font-size:13px; color:var(--text-sub);">Bạn chưa kết bạn với ai. Hãy chia sẻ link public cá nhân để kết nối!</p>' : '';
+            data.friends.forEach(f => {
+                const div = document.createElement('div'); div.className = 'contact-card';
+                div.innerHTML = `<div style="display:flex; align-items:center; gap:10px;"><div class="item-avatar" style="background-image:url(${f.avatar})"></div><div><b>${f.name}</b><br><span style="font-size:11px;color:var(--text-sub)">ID: ${f.id}</span></div></div>
+                <div><button class="sm-btn" style="background:#ef4444; color:#fff;" onclick="executeSocialAction('/api/social/unfriend', '${f.id}')">Hủy kết bạn</button></div>`;
+                friBox.appendChild(div);
+            });
+
+            // Danh sách nhóm chat đã gia nhập kèm tính năng RỜI NHÓM công khai
+            const grBox = document.getElementById('contacts-groups-list'); grBox.innerHTML = data.groups.length === 0 ? '<p style="font-size:13px; color:var(--text-sub);">Chưa tham gia nhóm nào.</p>' : '';
+            data.groups.forEach(g => {
+                const div = document.createElement('div'); div.className = 'contact-card';
+                div.innerHTML = `<div style="display:flex; align-items:center; gap:10px;"><div class="item-avatar" style="background-image:url(${g.avatar})"></div><div><b>${g.name}</b><br><span style="font-size:11px;color:var(--text-sub)">${g.description || ''}</span></div></div>
+                <div><button class="sm-btn" style="background:#ef4444; color:#fff;" onclick="executeSocialAction('/api/social/group-leave', '${g.id}')"><i class="fa-solid fa-right-from-bracket"></i> Rời nhóm</button></div>`;
+                grBox.appendChild(div);
+            });
+        }
+
+        async function executeSocialAction(endpoint, id) {
+            const bodyKey = endpoint.includes('group') ? 'group_id' : 'target_id';
+            const r = await fetch(endpoint, { method: 'POST', headers: {'Content-Type':'application/json', 'Authorization': 'Bearer ' + token}, body: JSON.stringify({ [bodyKey]: id }) });
+            const d = await r.json(); if(d.success) { syncSidebar(); syncSocialContacts(); }
+        }
+
         async function selectChat(id, name, sub, isGroup, groupObj) {
-            activeChatId = id;
-            document.getElementById('chat-title').innerText = name;
+            activeChatId = id; document.getElementById('chat-title').innerText = name;
             document.getElementById('chat-status').innerText = sub || '';
-            document.getElementById('msg-box').innerHTML = '';
-            socket.emit('join_room', id);
+            document.getElementById('msg-box').innerHTML = ''; socket.emit('join_room', id);
 
             const actionsBox = document.getElementById('chat-actions-box'); actionsBox.innerHTML = '';
             if(isGroup && groupObj) {
@@ -305,72 +372,50 @@
 
             const res = await fetch(`/api/messages/${id}`, { headers: {'Authorization': 'Bearer ' + token} });
             const data = await res.json();
-            if(data.messages) {
-                data.messages.forEach(msg => appendMessageBubble(msg.sender_id === currentUser.id, msg.sender_name, msg.text, msg.file_url));
-            }
+            if(data.messages) data.messages.forEach(msg => appendMessageBubble(msg.sender_id === currentUser.id, msg.sender_name, msg.text, msg.file_url));
         }
 
-        // TẢI FILE ĐÍNH KÈM VÀ HIỂN THỊ XEM TRƯỚC LẬP TỨC
         async function uploadChatFile() {
-            const fileInput = document.getElementById('chat-file-input');
-            if(!fileInput.files[0]) return;
-            
-            const formData = new FormData();
-            formData.append('chat_file', fileInput.files[0]);
-
+            const fileInput = document.getElementById('chat-file-input'); if(!fileInput.files[0]) return;
+            const formData = new FormData(); formData.append('chat_file', fileInput.files[0]);
             const r = await fetch('/api/chat/upload', { method: 'POST', headers: {'Authorization': 'Bearer ' + token}, body: formData });
             const d = await r.json();
             if(d.success) {
-                socket.emit('msg_send', {
-                    chat_id: activeChatId, sender_id: currentUser.id, sender_name: currentUser.name,
-                    text: `📎 Gửi một tệp đính kèm: ${fileInput.files[0].name}`, file_url: d.file_url
-                });
+                socket.emit('msg_send', { chat_id: activeChatId, sender_id: currentUser.id, sender_name: currentUser.name, text: `📎 Gửi một tệp đính kèm: ${fileInput.files[0].name}`, file_url: d.file_url });
                 fileInput.value = '';
-            } else alert(d.error);
+            }
         }
 
         function sendMessage() {
-            const input = document.getElementById('msg-input');
-            if(!input.value.trim() || !activeChatId) return;
+            const input = document.getElementById('msg-input'); if(!input.value.trim() || !activeChatId) return;
             socket.emit('msg_send', { chat_id: activeChatId, sender_id: currentUser.id, sender_name: currentUser.name, text: input.value.trim(), file_url: '' });
             input.value = '';
         }
 
-        // HIỂN THỊ TÊN NGƯỜI GỬI VÀ XEM TRƯỚC (PREVIEW) ĐÍNH KÈM CHUẨN ĐẸP
         function appendMessageBubble(isMe, senderName, text, fileUrl) {
-            const box = document.getElementById('msg-box');
-            const row = document.createElement('div');
+            const box = document.getElementById('msg-box'); const row = document.createElement('div');
             row.className = isMe ? 'msg-row me' : 'msg-row';
-            
             let filePreviewHtml = '';
             if(fileUrl) {
                 const ext = fileUrl.split('.').pop().toLowerCase();
                 if(['png','jpg','jpeg','gif','webp'].includes(ext)) {
-                    filePreviewHtml = `<img src="${fileUrl}" class="chat-img-preview" alt="Xem trước ảnh">`;
+                    filePreviewHtml = `<img src="${fileUrl}" class="chat-img-preview" alt="Preview ảnh">`;
                 } else {
                     filePreviewHtml = `<br><a href="${fileUrl}" target="_blank" style="font-size:12px; font-weight:600; color:var(--gold-dark);"><i class="fa-solid fa-file-arrow-down"></i> Tải tệp xuống</a>`;
                 }
             }
-
-            row.innerHTML = `
-                <div class="msg-sender-name">${senderName}</div>
-                <div class="msg-bubble">
-                    ${text}
-                    ${filePreviewHtml}
-                </div>
-            `;
+            row.innerHTML = `<div class="msg-sender-name">${senderName}</div><div class="msg-bubble">${text}${filePreviewHtml}</div>`;
             box.appendChild(row); box.scrollTop = box.scrollHeight;
         }
 
         async function registerPasskey() {
             try {
-                const resOpts = await fetch('/api/passkey/register-options', { headers: {'Authorization': 'Bearer ' + token} });
-                const opts = await resOpts.json();
+                const resOpts = await fetch('/api/passkey/register-options', { headers: {'Authorization': 'Bearer ' + token} }); const opts = await resOpts.json();
                 opts.challenge = Uint8Array.from(atob(opts.challenge.replace(/-/g, '+').replace(/_/g, '/')), c => c.charCodeAt(0));
                 opts.user.id = new TextEncoder().encode(opts.user.id);
                 const cred = await navigator.credentials.create({ publicKey: opts });
                 await fetch('/api/passkey/register-verify', { method: 'POST', headers: {'Content-Type': 'application/json', 'Authorization': 'Bearer '+token}, body: JSON.stringify({ id: cred.id }) });
-                alert("Đăng ký Passkey phần cứng thành công!");
+                alert("Đăng ký thiết bị bảo mật phần cứng thành công!");
             } catch (err) { alert("Lỗi: " + err); }
         }
 
@@ -383,16 +428,14 @@
                 opts.allowCredentials = opts.allowCredentials.map(c => ({ ...c, id: Uint8Array.from(atob(c.id.replace(/-/g, '+').replace(/_/g, '/')), x => x.charCodeAt(0)) }));
                 const assertion = await navigator.credentials.get({ publicKey: opts });
                 const resVerify = await fetch('/api/passkey/login-verify', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ email, id: assertion.id }) });
-                const d = await resVerify.json(); if (d.token) { localStorage.setItem('gold_token', d.token); window.location.reload(); }
+                const d = await resVerify.json(); if (d.token) { localStorage.setItem('gold_token', d.token); document.cookie = `user_id=${d.user?.id || ''}; path=/`; window.location.reload(); }
             } catch (err) { alert("Thất bại: " + err); }
         }
 
-        // DANGER ZONE ACTION
         async function deleteAccount() {
-            if(confirm("Bạn có chắc chắn muốn xóa tài khoản DashShare này không? Hành động này không thể hoàn tác!")) {
+            if(confirm("Xác nhận xóa tài khoản vĩnh viễn khỏi DashShare? Hành động không thể khôi phục.")) {
                 const r = await fetch('/api/profile/delete-account', { method: 'POST', headers: {'Authorization': 'Bearer ' + token} });
-                const d = await r.json();
-                if(d.success) { alert(d.message); logout(); }
+                const d = await r.json(); if(d.success) { alert(d.message); logout(); }
             }
         }
 
@@ -413,7 +456,7 @@
             const file = document.getElementById('g-avatar-file').files[0]; if(file) formData.append('avatar', file);
             const url = editingGroupId ? `/api/groups/update/${editingGroupId}` : '/api/groups/create';
             const r = await fetch(url, { method: 'POST', headers: {'Authorization': 'Bearer ' + token}, body: formData });
-            const d = await r.json(); if(d.success) { closeModal('group-modal'); syncSidebar(); }
+            const d = await r.json(); if(d.success) { closeModal('group-modal'); syncSidebar(); syncSocialContacts(); }
         }
 
         function openProfileModal() {
@@ -438,8 +481,7 @@
             const r = await fetch('/api/auth/qr-generate'); const d = await r.json();
             document.getElementById('login-qr-container').innerHTML = '';
             new QRCode(document.getElementById('login-qr-container'), { text: d.qr_data, width: 180, height: 180 });
-            openModal('qr-login-modal');
-            if(qrCheckInterval) clearInterval(qrCheckInterval);
+            openModal('qr-login-modal'); if(qrCheckInterval) clearInterval(qrCheckInterval);
             qrCheckInterval = setInterval(async () => {
                 const res = await fetch(`/api/auth/qr-check/${d.session_id}`); const sd = await res.json();
                 if(sd.status === 'success') { clearInterval(qrCheckInterval); localStorage.setItem('gold_token', sd.token); window.location.reload(); }
@@ -449,7 +491,7 @@
         function copyShortLink(id) { navigator.clipboard.writeText(document.getElementById(id).innerText); alert("Đã copy liên kết!"); }
         function openModal(id) { document.getElementById(id).style.display = 'flex'; }
         function closeModal(id) { document.getElementById(id).style.display = 'none'; if(id==='qr-login-modal'&&qrCheckInterval) clearInterval(qrCheckInterval); }
-        function logout() { localStorage.removeItem('gold_token'); window.location.reload(); }
+        function logout() { localStorage.removeItem('gold_token'); document.cookie = "user_id=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;"; window.location.reload(); }
     </script>
 </body>
 </html>
