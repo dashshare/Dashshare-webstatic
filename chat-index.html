@@ -14,10 +14,7 @@
             --border-color: #e2e8f0; --text-main: #0f172a; --text-sub: #475569;
         }
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: system-ui, sans-serif; }
-        body { background: #f1f5f9; color: var(--text-main); display: flex; height: 100vh; overflow: hidden; justify-content: center; align-items: center; }
-        
-        .public-card-container { background: #fff; padding: 32px; border-radius: 16px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); width: 100%; max-width: 400px; text-align: center; border: 1px solid var(--border-color); display: none; }
-        .public-avatar { width: 96px; height: 96px; border-radius: 50%; border: 4px solid var(--gold-light); margin: 0 auto 16px auto; background-size: cover; background-position: center; }
+        body { background: #f1f5f9; color: var(--text-main); display: flex; height: 100vh; overflow: hidden; }
         
         .auth-container { position: fixed; inset: 0; background: #f1f5f9; display: flex; justify-content: center; align-items: center; z-index: 9999; }
         .auth-card { background: #fff; padding: 32px; border-radius: 16px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); width: 100%; max-width: 360px; text-align: center; border: 1px solid var(--border-color); }
@@ -25,10 +22,10 @@
         .auth-desc { font-size: 13px; color: var(--text-sub); margin-bottom: 24px; }
         .auth-input { width: 100%; padding: 12px 14px; margin-bottom: 12px; border: 1px solid #cbd5e1; border-radius: 8px; outline: none; font-size: 14px; transition: all 0.2s; }
         .auth-input:focus { border-color: var(--gold-primary); box-shadow: 0 0 0 3px rgba(234,179,8,0.15); }
-        .auth-btn { width: 100%; padding: 12px; background: var(--gold-primary); color: #fff; border: none; border-radius: 8px; font-weight: 600; font-size: 14px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; margin-bottom: 10px; text-decoration: none; }
+        .auth-btn { width: 100%; padding: 12px; background: var(--gold-primary); color: #fff; border: none; border-radius: 8px; font-weight: 600; font-size: 14px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; margin-bottom: 10px; }
         .auth-btn:hover { background: var(--gold-dark); }
         
-        .app-layout { display: none; width: 100vw; height: 100vh; position: fixed; inset: 0; background: #f1f5f9; }
+        .app-layout { display: none; width: 100vw; height: 100vh; }
         .nav-sidebar { width: 68px; background: #1e1b4b; display: flex; flex-direction: column; align-items: center; padding: 24px 0; gap: 20px; }
         .nav-avatar { width: 44px; height: 44px; border-radius: 50%; background-size: cover; background-position: center; cursor: pointer; border: 2px solid var(--gold-light); transition: transform 0.2s; }
         .nav-avatar:hover { transform: scale(1.05); }
@@ -53,7 +50,6 @@
         .chat-view { display: flex; flex-direction: column; height: 100%; }
         .chat-header { padding: 14px 24px; background: #fff; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; box-shadow: 0 1px 2px rgba(0,0,0,0.02); }
         .chat-title { font-weight: 700; font-size: 16px; }
-        .chat-status { font-size: 12px; color: #10b981; display: flex; align-items: center; gap: 4px; margin-top: 2px; }
         .msg-area { flex: 1; padding: 24px; overflow-y: auto; display: flex; flex-direction: column; gap: 14px; }
         
         .msg-row { display: flex; gap: 10px; max-width: 75%; }
@@ -68,36 +64,18 @@
         .action-icon:hover { color: var(--gold-primary); }
         
         .modal { position: fixed; inset: 0; background: rgba(15,23,42,0.3); backdrop-filter: blur(4px); display: none; justify-content: center; align-items: center; z-index: 10000; }
-        .modal-card { background: #fff; padding: 28px; border-radius: 16px; width: 100%; max-width: 420px; border: 1px solid var(--border-color); box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1); text-align: center; }
+        .modal-card { background: #fff; padding: 28px; border-radius: 16px; width: 100%; max-width: 420px; border: 1px solid var(--border-color); box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1); }
         .modal-title { font-size: 18px; font-weight: 700; margin-bottom: 16px; color: var(--text-main); }
         
         .profile-header { display: flex; flex-direction: column; align-items: center; gap: 12px; margin-bottom: 20px; padding-bottom: 20px; border-bottom: 1px solid var(--border-color); }
-        .profile-avatar-upload { width: 80px; height: 80px; border-radius: 50%; background-size: cover; background-position: center; border: 3px solid var(--gold-light); cursor: pointer; position: relative; }
-        .qr-container { display: inline-block; padding: 12px; background: #fff; border: 1px solid var(--border-color); border-radius: 8px; margin-top: 15px; }
     </style>
 </head>
 <body>
 
-    <div class="public-card-container" id="public-group-screen">
-        <div class="public-avatar" id="pub-group-avatar"></div>
-        <h2 id="pub-group-name" style="margin-bottom: 4px; font-size: 22px;">Tên Nhóm</h2>
-        <div style="font-size: 14px; color: #64748b; margin-bottom: 12px; font-weight: 500;">Nhóm Cộng Đồng</div>
-        <p id="pub-group-desc" style="font-size: 14px; color: #475569; margin-bottom: 24px; line-height: 1.5;"></p>
-        
-        <div id="pub-group-action-zone"></div>
-        
-        <div id="pub-group-qr-zone" style="display:none; margin-bottom: 20px;">
-            <div class="qr-container" id="pub-group-qrcode"></div>
-            <p style="font-size: 12px; color: #64748b; margin-top: 6px;">Quét mã QR để chia sẻ nhanh liên kết nhóm</p>
-        </div>
-        
-        <button class="auth-btn" style="background: #64748b;" onclick="window.location.href='/'"><i class="fa-solid fa-house"></i> Về Trang Chủ</button>
-    </div>
-
-    <div class="auth-container" id="auth-screen" style="display: none;">
+    <div class="auth-container" id="auth-screen">
         <div class="auth-card">
             <div class="auth-logo">DashShare Gold</div>
-            <div class="auth-desc">Ultimate sharing & communication platform</div>
+            <div class="auth-desc" id="auth-desc-text">Ultimate sharing & communication platform</div>
             
             <div id="register-fields" style="display: none;">
                 <input type="text" id="auth-name" class="auth-input" placeholder="Tên hiển thị của bạn">
@@ -145,7 +123,6 @@
                 <div class="chat-header">
                     <div>
                         <div class="chat-title" id="active-chat-title">Phòng Trò Chuyện</div>
-                        <div class="chat-status" id="active-chat-status"><i class="fa-solid fa-circle" style="font-size:8px;"></i> Sẵn sàng kết nối</div>
                     </div>
                 </div>
                 
@@ -162,20 +139,20 @@
     <div class="modal" id="profile-modal">
         <div class="modal-card">
             <div class="modal-title">Thiết lập tài khoản</div>
-            <div class="profile-header">
-                <div style="font-weight:700; font-size:16px;" id="profile-display-name">User</div>
-                <div style="font-size:12px; color:var(--text-sub);" id="profile-display-id">ID: ds000000</div>
+            <div class="profile-header" style="text-align: center;">
+                <div style="font-weight:700; font-size:16px; margin-bottom: 4px;" id="profile-display-name">User Name</div>
+                <div style="font-size:12px; color:var(--text-sub); margin-bottom: 16px;" id="profile-display-id">ID: ds000000</div>
             </div>
             <button class="auth-btn" style="background:#10b981;" onclick="registerHardwarePasskey()"><i class="fa-solid fa-key"></i> ĐĂNG KÝ PASSKEY PHẦN CỨNG</button>
-            <button class="auth-btn" style="background:#64748b; margin-top:8px;" onclick="closeModal('profile-modal')">Đóng</button>
+            <button class="auth-btn" style="background:#64748b; margin-top:8px;" onclick="closeModal('profile-modal')">Đóng cửa sổ</button>
         </div>
     </div>
 
     <div class="modal" id="qr-login-modal">
-        <div class="modal-card">
+        <div class="modal-card" style="text-align: center;">
             <div class="modal-title">Quét mã QR đăng nhập nhanh</div>
             <div id="login-qr-container" style="display: inline-block; padding: 12px; background: #fff; border: 1px solid var(--border-color); margin-bottom: 12px;"></div>
-            <button class="auth-btn" style="background: #64748b;" onclick="closeModal('qr-login-modal')">Đóng</button>
+            <button class="auth-btn" style="background: #64748b; margin-top: 16px;" onclick="closeModal('qr-login-modal')">Đóng</button>
         </div>
     </div>
 
@@ -197,115 +174,149 @@
         let isRegisterMode = false;
         let qrCheckInterval = null;
 
+        // Hàm helper chuyển đổi chuỗi Base64URL sang ArrayBuffer dùng cho WebAuthn API
+        function base64urlToBuffer(baseurl) {
+            const padding = '='.repeat((4 - baseurl.length % 4) % 4);
+            const base64 = (baseurl + padding).replace(/\-/g, '+').replace(/_/g, '/');
+            const raw = window.atob(base64);
+            const buffer = new Uint8Array(raw.length);
+            for (let i = 0; i < raw.length; i++) buffer[i] = raw.charCodeAt(i);
+            return buffer.buffer;
+        }
+
+        // Hàm helper mã hóa ArrayBuffer sang chuỗi dạng Base64URL
+        function bufferToBase64url(buffer) {
+            const bytes = new Uint8Array(buffer);
+            let raw = '';
+            for (const b of bytes) raw += String.fromCharCode(b);
+            return window.btoa(raw).replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
+        }
+
         document.addEventListener("DOMContentLoaded", () => {
-            const path = window.location.pathname;
-            if (path.startsWith('/group/')) {
-                const groupId = path.split('/').pop();
-                initPublicGroupView(groupId);
+            if (token) {
+                initApplicationWorkspace();
             } else {
-                if (token) {
-                    initApplicationWorkspace();
-                } else {
-                    document.getElementById('auth-screen').style.display = 'flex';
-                }
+                document.getElementById('auth-screen').style.display = 'flex';
             }
         });
 
-        // ĐĂNG NHẬP PASSKEY (ĐÃ SỬA LỖI ĐỊNH NGHĨA)
+        // ================== LOGIC XỬ LÝ ĐĂNG NHẬP PASSKEY ==================
         async function loginWithPasskey() {
             const email = document.getElementById('auth-email').value;
-            if(!email) return alert("Vui lòng điền Email đăng ký Passkey trước.");
+            if(!email) return alert("Vui lòng nhập địa chỉ Email để xác thực đăng nhập Passkey.");
             
             try {
-                const resOptions = await fetch('/api/passkey/login-options');
-                const options = await resOptions.json();
-                
-                // Giả lập hardware key credentials để khớp với DB backend
-                const r = await fetch('/api/passkey/login-verify', {
+                // 1. Lấy Options sinh trắc học/phần cứng từ Backend
+                const resOptions = await fetch('/api/passkey/login-options', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ email, id: 'hardware_key_auth' })
+                    body: JSON.stringify({ email })
                 });
-                const d = await r.json();
+                const options = await resOptions.json();
+                if(options.error) return alert(options.error);
+
+                // Convert challenge và allowCredentials từ chuỗi sang Buffer
+                options.challenge = base64urlToBuffer(options.challenge);
+                if (options.allowCredentials) {
+                    options.allowCredentials.forEach(cred => {
+                        cred.id = base64urlToBuffer(cred.id);
+                    });
+                }
+
+                // 2. Gọi xác thực thiết bị phần cứng của trình duyệt (TouchID/FaceID/Windows Hello)
+                const credential = await navigator.credentials.get({ publicKey: options });
+                
+                // 3. Đóng gói dữ liệu trả về và gửi lên Backend để xác thực
+                const loginPayload = {
+                    email,
+                    id: credential.id,
+                    rawId: bufferToBase64url(credential.rawId),
+                    type: credential.type,
+                    response: {
+                        authenticatorData: bufferToBase64url(credential.response.authenticatorData),
+                        clientDataJSON: bufferToBase64url(credential.response.clientDataJSON),
+                        signature: bufferToBase64url(credential.response.signature),
+                        userHandle: credential.response.userHandle ? bufferToBase64url(credential.response.userHandle) : null
+                    }
+                };
+
+                const resVerify = await fetch('/api/passkey/login-verify', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(loginPayload)
+                });
+                const d = await resVerify.json();
+
                 if(d.success && d.token) {
                     localStorage.setItem('gold_token', d.token);
                     window.location.reload();
                 } else {
-                    alert(d.error || "Xác thực Passkey thất bại.");
+                    alert(d.error || "Xác thực danh tính Passkey thất bại.");
                 }
             } catch(err) {
-                alert("Thiết bị không hỗ trợ hoặc lỗi Passkey.");
+                console.error(err);
+                alert("Thiết bị từ chối xác thực hoặc không tìm thấy cấu hình Passkey tương thích.");
             }
         }
 
-        // ĐĂNG KÝ PASSKEY TỪ PROFILE
+        // ================== LOGIC ĐĂNG KÝ THIẾT BỊ PASSKEY MỚI ==================
         async function registerHardwarePasskey() {
             try {
+                // 1. Lấy cấu hình đăng ký khóa mới từ server
                 const resOptions = await fetch('/api/passkey/register-options', {
+                    method: 'POST',
                     headers: { 'Authorization': 'Bearer ' + token }
                 });
                 const options = await resOptions.json();
-                
-                const r = await fetch('/api/passkey/register-verify', {
+                if(options.error) return alert(options.error);
+
+                // Convert dữ liệu challenge và user id sang định dạng ArrayBuffer thích hợp
+                options.challenge = base64urlToBuffer(options.challenge);
+                options.user.id = base64urlToBuffer(options.user.id);
+                if (options.excludeCredentials) {
+                    options.excludeCredentials.forEach(cred => {
+                        cred.id = base64urlToBuffer(cred.id);
+                    });
+                }
+
+                // 2. Kích hoạt Trình quản lý biểu mẫu Sinh trắc học của Hệ điều hành tạo khóa mới
+                const credential = await navigator.credentials.create({ publicKey: options });
+
+                // 3. Chuyển đổi dữ liệu và gửi lên API verify đăng ký khóa
+                const regPayload = {
+                    id: credential.id,
+                    rawId: bufferToBase64url(credential.rawId),
+                    type: credential.type,
+                    response: {
+                        attestationObject: bufferToBase64url(credential.response.attestationObject),
+                        clientDataJSON: bufferToBase64url(credential.response.clientDataJSON)
+                    }
+                };
+
+                const resVerify = await fetch('/api/passkey/register-verify', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
-                    body: JSON.stringify({ id: 'hardware_key_auth' })
+                    body: JSON.stringify(regPayload)
                 });
-                const d = await r.json();
-                if(d.success) alert("Đăng ký thiết bị Passkey bảo mật thành công!");
+                const d = await resVerify.json();
+                if(d.success) {
+                    alert("Đăng ký thành công khóa bảo mật phần cứng Passkey!");
+                    closeModal('profile-modal');
+                } else {
+                    alert(d.error || "Lỗi lưu cấu hình Passkey.");
+                }
             } catch(err) {
-                alert("Không thể đăng ký Passkey.");
+                console.error(err);
+                alert("Hủy bỏ thao tác đăng ký hoặc thiết bị không hỗ trợ phương thức này.");
             }
         }
 
-        async function initPublicGroupView(groupId) {
-            try {
-                const res = await fetch(`/api/public/group/${groupId}`);
-                if (!res.ok) { window.location.href = '/'; return; }
-                const group = await res.json();
-                
-                document.getElementById('public-group-screen').style.display = 'block';
-                document.getElementById('pub-group-name').innerText = group.name;
-                document.getElementById('pub-group-desc').innerText = group.description || "Không có mô tả chi tiết.";
-                document.getElementById('pub-group-avatar').style.backgroundImage = `url('${group.avatar || 'https://placehold.co/150x150/eab308/ffffff?text=Group'}')`;
-
-                const actionZone = document.getElementById('pub-group-action-zone');
-                if (!token) {
-                    actionZone.innerHTML = `<button class="auth-btn" onclick="redirectToLogin()"><i class="fa-solid fa-right-to-bracket"></i> Đi đến Đăng Nhập</button>`;
-                } else {
-                    const checkRes = await fetch(`/api/groups/check-membership/${groupId}`, { headers: { 'Authorization': 'Bearer ' + token } });
-                    const checkData = await checkRes.json();
-
-                    if (checkData.isMember) {
-                        actionZone.innerHTML = `<button class="auth-btn" style="background:#10b981; margin-bottom:12px;" onclick="window.location.href='/'"><i class="fa-solid fa-comments"></i> Vào Phòng Chat Hệ Thống</button>`;
-                        document.getElementById('pub-group-qr-zone').style.display = 'block';
-                        document.getElementById('pub-group-qrcode').innerHTML = '';
-                        new QRCode(document.getElementById('pub-group-qrcode'), { text: window.location.href, width: 140, height: 140 });
-                    } else {
-                        actionZone.innerHTML = `<button class="auth-btn" onclick="joinGroupPublicSubmit('${groupId}')"><i class="fa-solid fa-user-plus"></i> Xác Nhận Tham Gia Nhóm</button>`;
-                    }
-                }
-            } catch (err) { window.location.href = '/'; }
-        }
-
-        function redirectToLogin() {
-            document.getElementById('public-group-screen').style.display = 'none';
-            document.getElementById('auth-screen').style.display = 'flex';
-        }
-
-        async function joinGroupPublicSubmit(groupId) {
-            const res = await fetch('/api/groups/join-public', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
-                body: JSON.stringify({ group_id: groupId })
-            });
-            if (res.ok) { alert("Tham gia nhóm thành công!"); window.location.reload(); }
-        }
-
+        // ================== CÁC LOGIC HỆ THỐNG KHÁC GIỮ NGUYÊN KHÔNG ĐỔI ==================
         function toggleAuthMode() {
             isRegisterMode = !isRegisterMode;
             document.getElementById('register-fields').style.display = isRegisterMode ? 'block' : 'none';
             document.getElementById('main-auth-btn').innerText = isRegisterMode ? 'ĐĂNG KÝ HỘI VIÊN' : 'ĐĂNG NHẬP HỆ THỐNG';
+            document.getElementById('toggle-auth-link').innerText = isRegisterMode ? 'Đã có tài khoản? Quay lại đăng nhập' : 'Chưa có tài khoản? Đăng ký ngay';
         }
 
         async function sendAuthOtp() {
@@ -354,7 +365,14 @@
         async function initApplicationWorkspace() {
             document.getElementById('auth-screen').style.display = 'none';
             document.getElementById('app-screen').style.display = 'flex';
-            loadSidebarData();
+            
+            const r = await fetch('/api/profile/update', { method:'POST', headers:{'Authorization':'Bearer '+token} });
+            const d = await r.json();
+            if(d.success) {
+                currentUser = d.user;
+                document.getElementById('sidebar-user-avatar').style.backgroundImage = `url('${currentUser.avatar || 'https://placehold.co/150x150/eab308/ffffff?text=Ava'}')`;
+                loadSidebarData();
+            } else { logout(); }
         }
 
         async function loadSidebarData() {
@@ -369,7 +387,7 @@
                         <div class="item-avatar" style="background-image: url('${g.avatar || 'https://placehold.co/150x150/eab308/ffffff?text=Group'}')"></div>
                         <div class="item-info">
                             <div class="item-name">${g.name}</div>
-                            <div class="item-sub">Nhấp để vào trò chuyện</div>
+                            <div class="item-sub">Nhấp để mở phòng trò chuyện</div>
                         </div>
                     </div>`;
             });
@@ -389,8 +407,9 @@
             const box = document.getElementById('message-container-box');
             box.innerHTML = '';
             messages.forEach(m => {
+                const isMe = m.sender_id === currentUser.id;
                 box.innerHTML += `
-                    <div class="msg-row">
+                    <div class="msg-row ${isMe ? 'me' : ''}">
                         <div class="msg-bubble">
                             <strong style="font-size:11px; display:block; color:var(--gold-dark);">${m.sender_name}</strong>
                             <div>${m.text}</div>
@@ -407,8 +426,8 @@
 
             socket.emit('msg_send', {
                 chat_id: activeChatId,
-                sender_id: 'user_current',
-                sender_name: 'Hội viên',
+                sender_id: currentUser.id,
+                sender_name: currentUser.name,
                 text: txt,
                 file_url: ''
             });
@@ -418,8 +437,9 @@
         socket.on('msg_receive', (data) => {
             if(data.chat_id === activeChatId) {
                 const box = document.getElementById('message-container-box');
+                const isMe = data.sender_id === currentUser.id;
                 box.innerHTML += `
-                    <div class="msg-row">
+                    <div class="msg-row ${isMe ? 'me' : ''}">
                         <div class="msg-bubble">
                             <strong style="font-size:11px; display:block; color:var(--gold-dark);">${data.sender_name}</strong>
                             <div>${data.text}</div>
@@ -432,7 +452,7 @@
         async function submitCreateGroupRoom() {
             const name = document.getElementById('new-group-name').value;
             const description = document.getElementById('new-group-desc').value;
-            if(!name) return alert("Vui lòng nhập tên nhóm.");
+            if(!name) return alert("Vui lòng điền tên phòng nhóm.");
 
             const res = await fetch('/api/groups/create', {
                 method: 'POST',
@@ -442,7 +462,12 @@
             if(res.ok) { closeModal('create-group-modal'); loadSidebarData(); }
         }
 
-        function openProfileModal() { openModal('profile-modal'); }
+        function openProfileModal() {
+            if(!currentUser) return;
+            document.getElementById('profile-display-name').innerText = currentUser.name;
+            document.getElementById('profile-display-id').innerText = "ID: " + currentUser.id;
+            openModal('profile-modal');
+        }
         function openCreateGroupModal() { openModal('create-group-modal'); }
         function openModal(id) { document.getElementById(id).style.display = 'flex'; }
         function closeModal(id) { document.getElementById(id).style.display = 'none'; if(id==='qr-login-modal'&&qrCheckInterval) clearInterval(qrCheckInterval); }
