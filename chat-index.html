@@ -1,345 +1,272 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="vi">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>DashShare Gold</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <script src="https://unpkg.com/html5-qrcode"></script>
     <style>
-        body { font-family: Arial, sans-serif; background-color: #f0f2f5; display: flex; flex-direction: column; justify-content: center; align-items: center; min-height: 100vh; margin: 0; padding: 20px; box-sizing: border-box; }
-        .auth-container, .settings-container, .profile-view-container { background: #fff; padding: 30px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); width: 340px; text-align: center; margin-bottom: 20px; display: none; }
-        .brand-title { color: #b58900; font-size: 24px; font-weight: bold; margin-bottom: 5px; }
-        .brand-sub { color: #666; font-size: 13px; margin-bottom: 20px; }
-        .input-group { margin-bottom: 12px; }
-        .auth-input { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box; font-size: 14px; }
-        .btn { width: 100%; padding: 12px; border: none; border-radius: 6px; font-weight: bold; font-size: 14px; cursor: pointer; margin-top: 8px; }
-        .btn-yellow { background-color: #e6a23c; color: white; }
-        .btn-green { background-color: #13ce66; color: white; }
-        .btn-navy { background-color: #409eff; color: white; }
-        .btn-dark { background-color: #34495e; color: white; }
-        .toggle-link { margin-top: 15px; display: block; color: #e6a23c; font-size: 13px; text-decoration: none; }
-        .qr-zone { display: none; margin-top: 15px; padding: 10px; border: 1px dashed #ccc; }
-        #qr-canvas { width: 150px; height: 150px; margin: 0 auto; }
-        .avatar-img { width: 80px; height: 80px; border-radius: 50%; object-fit: cover; border: 3px solid #b58900; margin-bottom: 10px; }
+        :root {
+            --gold-light: #fef08a; --gold-primary: #eab308; --gold-dark: #a16207;
+            --border-color: #e2e8f0; --text-main: #0f172a; --text-sub: #475569;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: system-ui, sans-serif; }
+        body { background: #f1f5f9; color: var(--text-main); display: flex; flex-direction: column; justify-content: center; align-items: center; min-height: 100vh; overflow-x: hidden; }
+        
+        /* Form Auth & View Public */
+        .auth-container, .public-view-container { background: #fff; padding: 30px; border-radius: 16px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); width: 100%; max-width: 380px; border: 1px solid var(--border-color); text-align: center; display: none; }
+        .auth-input { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #cbd5e1; border-radius: 8px; outline: none; font-size: 14px; }
+        .auth-submit { width: 100%; padding: 12px; background: var(--gold-primary); color: #fff; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; margin-top: 8px; display: inline-flex; align-items: center; justify-content: center; gap: 8px; font-size: 14px; }
+        .auth-submit:hover { background: var(--gold-dark); }
+        
+        /* App Main Screen Workspace */
+        .app-layout { display: none; width: 100vw; height: 100vh; background: #f1f5f9; }
+        .nav-sidebar { width: 68px; background: #1e1b4b; display: flex; flex-direction: column; align-items: center; padding: 24px 0; gap: 20px; }
+        .nav-avatar { width: 44px; height: 44px; border-radius: 50%; background-size: cover; background-position: center; cursor: pointer; border: 2px solid var(--gold-light); }
+        .nav-item { font-size: 22px; color: rgba(255,255,255,0.5); cursor: pointer; text-align: center; width: 100%; padding: 10px 0; position: relative; }
+        .nav-item.active { color: var(--gold-primary); }
+        
+        .list-panel { width: 320px; background: #fff; border-right: 1px solid var(--border-color); display: flex; flex-direction: column; }
+        .panel-header { padding: 16px; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; }
+        .chat-list { flex: 1; overflow-y: auto; }
+        
+        .content-view { flex: 1; display: flex; flex-direction: column; background: #f8fafc; }
+        .chat-view-panel { display: flex; flex-direction: column; flex: 1; }
+        .chat-header { padding: 16px; background: #fff; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; }
+        .msg-area { flex: 1; padding: 20px; overflow-y: auto; }
+        .input-bar { padding: 16px; background: #fff; border-top: 1px solid var(--border-color); display: flex; gap: 10px; }
+        .input-bar input { flex: 1; padding: 12px; border: 1px solid #cbd5e1; border-radius: 8px; outline: none; }
+        
+        /* Public Profile / Group Cards UI */
+        .public-avatar { width: 90px; height: 90px; border-radius: 50%; border: 4px solid var(--gold-light); margin: 0 auto 15px auto; background-size: cover; background-position: center; }
+        .modal { position: fixed; inset: 0; background: rgba(0,0,0,0.4); display: none; justify-content: center; align-items: center; z-index: 10000; }
+        .modal-card { background: #fff; padding: 25px; border-radius: 16px; width: 90%; max-width: 440px; }
     </style>
-    <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.1/build/qrcode.min.js"></script>
 </head>
 <body>
 
-<div class="auth-container" id="auth-box">
-    <div class="brand-title">DashShare Gold</div>
-    <div class="brand-sub">Ultimate sharing & communication system</div>
-
-    <div class="input-group" id="group-username" style="display: none;">
-        <input type="text" class="auth-input" id="auth-name" placeholder="Display Name">
-    </div>
-    
-    <div class="input-group">
-        <input type="email" class="auth-input" id="auth-email" placeholder="Email Address">
-    </div>
-    
-    <div class="input-group" style="display: flex; gap: 5px;">
-        <input type="text" class="auth-input" id="auth-otp" placeholder="6-digit OTP Code">
-        <button class="btn btn-navy" style="width: auto; margin-top: 0; white-space: nowrap;" onclick="sendOTP()">Send OTP</button>
-    </div>
-    
-    <div class="input-group">
-        <input type="password" class="auth-input" id="auth-password" placeholder="Password">
+    <div id="auth-screen" class="auth-container">
+        <h2 style="color: var(--gold-dark); margin-bottom: 20px;">DashShare Gold</h2>
+        <input type="text" id="auth-name" class="auth-input" placeholder="Tên thành viên mới" style="display: none;">
+        <input type="email" id="auth-email" class="auth-input" placeholder="Địa chỉ Email">
+        <div style="display: flex; gap: 8px; margin: 4px 0;">
+            <input type="text" id="auth-otp" class="auth-input" placeholder="Mã OTP 6 số" style="margin:0;">
+            <button onclick="sendAuthOtp()" style="padding:12px 15px; background:#3b82f6; color:#fff; border:none; border-radius:8px; font-size:13px; font-weight:600; cursor:pointer;">Gửi OTP</button>
+        </div>
+        <input type="password" id="auth-password" class="auth-input" placeholder="Mật khẩu bảo mật">
+        <button id="btn-submit-auth" class="auth-submit" onclick="submitAuth()">ĐĂNG NHẬP HỆ THỐNG</button>
+        <button class="auth-submit" style="background:#10b981;" onclick="loginWithPasskey()"><i class="fa-solid fa-fingerprint"></i> ĐĂNG NHẬP PASSKEY</button>
+        <button class="auth-submit" style="background:#475569;" onclick="openQrLoginModal()"><i class="fa-solid fa-qrcode"></i> QUÉT QR ĐĂNG NHẬP</button>
+        <p onclick="toggleAuthMode()" id="switch-text" style="font-size:13px; margin-top:15px; color:var(--gold-dark); cursor:pointer;">Chưa có tài khoản? Đăng ký ngay</p>
     </div>
 
-    <button class="btn btn-yellow" id="btn-main-action" onclick="handleAuthSubmit()">SIGN IN SYSTEM</button>
-    <button class="btn btn-green" onclick="loginWithPasskey()">SIGN IN WITH PASSKEY</button>
-    <button class="btn btn-dark" onclick="generateQRLogin()">SCAN QR TO SIGN IN</button>
-
-    <div class="qr-zone" id="qr-area">
-        <canvas id="qr-canvas"></canvas>
-        <p style="font-size: 12px; color: #666; margin: 5px 0 0 0;">Scan this QR with your logged-in mobile device</p>
+    <div id="public-group-screen" class="public-view-container">
+        <div class="public-avatar" id="pub-group-avatar" style="background-image: url('https://placehold.co/150x150/eab308/ffffff?text=Group')"></div>
+        <h2 id="pub-group-name" style="color: var(--text-main); margin-bottom: 5px;">Tên Nhóm</h2>
+        <p id="pub-group-desc" style="color: var(--text-sub); font-size: 14px; margin-bottom: 20px;">Mô tả chi tiết nhóm...</p>
+        <div id="pub-group-action-zone">
+            </div>
+        <button class="auth-submit" style="background: #64748b; margin-top: 10px;" onclick="window.location.href='/'">VỀ TRANG CHỦ</button>
     </div>
 
-    <a href="#" class="toggle-link" id="link-toggle-auth" onclick="toggleAuthMode(event)">Don't have an account? Register now</a>
-</div>
-
-<div class="settings-container" id="settings-box">
-    <div class="brand-title" style="font-size: 20px;">Profile Settings</div>
-    <p style="font-size: 13px; color: #666;">Manage your security keys and profile data</p>
-    
-    <button class="btn btn-green" onclick="registerHardwarePasskey()">REGISTER HARDWARE PASSKEY</button>
-    <button class="btn btn-dark" style="margin-top: 15px;" onclick="handleLogout()">LOGOUT</button>
-</div>
-
-<div class="profile-view-container" id="profile-view-box">
-    <img src="/storage/default-avatar.png" class="avatar-img" id="view-avatar">
-    <div class="brand-title" style="font-size: 22px;" id="view-name">User Profile</div>
-    <p style="font-size: 14px; color: #666;" id="view-id"></p>
-    <button class="btn btn-dark" onclick="window.location.href='/'">GO TO HOME</button>
-</div>
-
-<script>
-let isLoginMode = true;
-let token = localStorage.getItem('token');
-let qrInterval = null;
-
-document.addEventListener("DOMContentLoaded", () => {
-    routeManager();
-});
-
-function routeManager() {
-    const path = window.location.pathname;
-    
-    if (path.startsWith('/people/')) {
-        const userId = path.split('/').pop();
-        loadPublicProfile(userId);
-    } else if (path.startsWith('/group/')) {
-        const groupId = path.split('/').pop();
-        loadGroupDetails(groupId);
-    } else {
-        if (token) {
-            document.getElementById('auth-box').style.display = 'none';
-            document.getElementById('settings-box').style.display = 'block';
-            document.getElementById('profile-view-box').style.display = 'none';
-        } else {
-            document.getElementById('auth-box').style.display = 'block';
-            document.getElementById('settings-box').style.display = 'none';
-            document.getElementById('profile-view-box').style.display = 'none';
-        }
-    }
-}
-
-async function loadPublicProfile(id) {
-    try {
-        const res = await fetch(`/api/users/public/${id}`);
-        const user = await res.json();
+    <div id="app-screen" class="app-layout">
+        <div class="nav-sidebar">
+            <div class="nav-avatar" id="user-avatar-btn" onclick="openProfileModal()"></div>
+            <div class="nav-item active" id="tab-chat-btn" onclick="switchMainTab('chat')"><i class="fa-regular fa-comment-dots"></i></div>
+            <div class="nav-item" onclick="logout()" style="margin-top: auto;"><i class="fa-solid fa-arrow-right-from-bracket"></i></div>
+        </div>
         
-        if (!res.ok) {
-            alert(user.error);
-            window.location.href = '/';
-            return;
-        }
+        <div class="list-panel">
+            <div class="panel-header">
+                <h3 style="font-size:16px;">Trò chuyện</h3>
+                <button onclick="openCreateGroupModal()" class="auth-submit" style="width:auto; margin:0; padding:6px 10px; font-size:12px;"><i class="fa-solid fa-plus"></i> Tạo Nhóm</button>
+            </div>
+            <div class="chat-list" id="sidebar-chat-items">
+                </div>
+        </div>
+        
+        <div class="content-view">
+            <div id="panel-chat-view" class="chat-view-panel">
+                <div class="chat-header">
+                    <div>
+                        <h3 id="chat-title">Hệ thống DashShare Gold</h3>
+                        <p id="chat-status" style="font-size:12px; color:var(--text-sub);">Vui lòng chọn một phòng trò chuyện</p>
+                    </div>
+                </div>
+                <div class="msg-area" id="msg-box"></div>
+                <div class="input-bar">
+                    <input type="text" id="msg-input" placeholder="Nhập lời muốn nói...">
+                    <button class="auth-submit" style="width:auto; margin:0; padding:0 20px;" onclick="sendMessage()">GỬI</button>
+                </div>
+            </div>
+        </div>
+    </div>
 
-        document.getElementById('auth-box').style.display = 'none';
-        document.getElementById('settings-box').style.display = 'none';
-        document.getElementById('profile-view-box').style.display = 'block';
+    <div class="modal" id="profile-modal">
+        <div class="modal-card">
+            <h3>Cài đặt trang cá nhân</h3>
+            <button class="auth-submit" style="background:#10b981;" onclick="registerPasskey()"><i class="fa-solid fa-key"></i> ĐĂNG KÝ PASSKEY PHẦN CỨNG</button>
+            <button class="auth-submit" style="background:#94a3b8; margin-top:10px;" onclick="closeModal('profile-modal')">Đóng</button>
+        </div>
+    </div>
 
-        document.getElementById('view-name').innerText = user.name;
-        document.getElementById('view-id').innerText = "ID: " + user.id;
-        document.getElementById('view-avatar').src = user.avatar;
-    } catch (err) {
-        window.location.href = '/';
-    }
-}
+    <div class="modal" id="qr-login-modal">
+        <div class="modal-card" style="text-align:center;">
+            <h3>Quét QR đăng nhập nhanh</h3>
+            <div id="login-qr-container" style="display:inline-block; padding:12px; margin:15px 0; background:#fff; border:1px solid var(--border-color);"></div>
+            <button class="auth-submit" style="background:#94a3b8;" onclick="closeModal('qr-login-modal')">Đóng</button>
+        </div>
+    </div>
 
-function toggleAuthMode(e) {
-    e.preventDefault();
-    isLoginMode = !isLoginMode;
-    clearInterval(qrInterval);
-    document.getElementById('qr-area').style.display = 'none';
-    
-    const nameField = document.getElementById('group-username');
-    const mainBtn = document.getElementById('btn-main-action');
-    const toggleLink = document.getElementById('link-toggle-auth');
+    <script>
+        let token = localStorage.getItem('gold_token') || '';
+        let isRegisterMode = false;
+        let qrCheckInterval = null;
 
-    if (isLoginMode) {
-        nameField.style.display = 'none';
-        mainBtn.innerText = 'SIGN IN SYSTEM';
-        toggleLink.innerText = "Don't have an account? Register now";
-    } else {
-        nameField.style.display = 'block';
-        mainBtn.innerText = 'REGISTER MEMBERSHIP';
-        toggleLink.innerText = 'Already have an account? Back to Login';
-    }
-}
-
-async function sendOTP() {
-    const email = document.getElementById('auth-email').value;
-    if (!email) return alert("Please enter your email address first.");
-    
-    try {
-        const res = await fetch('/api/auth/send-otp', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ email })
+        document.addEventListener("DOMContentLoaded", () => {
+            router();
         });
-        const data = await res.json();
-        if (res.ok) alert("OTP code has been sent to your email.");
-        else alert("Error: " + data.error);
-    } catch (err) {
-        alert("Failed to connect to the server.");
-    }
-}
 
-async function handleAuthSubmit() {
-    const email = document.getElementById('auth-email').value;
-    const password = document.getElementById('auth-password').value;
-    const otp = document.getElementById('auth-otp').value;
-    const name = document.getElementById('auth-name').value;
-
-    const endpoint = isLoginMode ? '/api/auth/login' : '/api/auth/register';
-    const payload = isLoginMode ? { email, password, otp } : { email, password, name, otp };
-
-    try {
-        const response = await fetch(endpoint, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload)
-        });
-        const data = await response.json();
-
-        if (response.ok) {
-            alert(isLoginMode ? "Sign in successfully!" : "Registration successfully!");
-            token = data.token;
-            localStorage.setItem('token', data.token);
-            routeManager();
-        } else {
-            alert("Error: " + (data.error || "Authentication failed."));
-        }
-    } catch (err) {
-        alert("System connection error. Please try again.");
-    }
-}
-
-async function generateQRLogin() {
-    try {
-        const response = await fetch('/api/auth/qr-generate');
-        const data = await response.json();
-        if (!response.ok) return alert("Failed to build QR session.");
-
-        document.getElementById('qr-area').style.display = 'block';
-        QRCode.toCanvas(document.getElementById('qr-canvas'), data.qrToken, { width: 150 });
-
-        clearInterval(qrInterval);
-        qrInterval = setInterval(async () => {
-            const checkRes = await fetch(`/api/auth/qr-check/${data.qrToken}`);
-            const checkData = await checkRes.json();
-            
-            if (checkData.status === 'success') {
-                clearInterval(qrInterval);
-                document.getElementById('qr-area').style.display = 'none';
-                alert("Sign in via QR successfully!");
-                token = checkData.token;
-                localStorage.setItem('token', token);
-                routeManager();
-            } else if (checkData.status === 'expired') {
-                clearInterval(qrInterval);
-                document.getElementById('qr-area').style.display = 'none';
-                alert("QR session expired. Please generate again.");
-            }
-        }, 3000);
-    } catch (err) {
-        alert("Failed to initialize login QR Code.");
-    }
-}
-
-async function registerHardwarePasskey() {
-    try {
-        const resOpts = await fetch('/api/passkey/register-options', { 
-            method: 'POST',
-            headers: { 'Authorization': 'Bearer ' + token } 
-        }); 
-        const opts = await resOpts.json();
-        if (opts.error) return alert("Error: " + opts.error);
-
-        opts.challenge = Uint8Array.from(atob(opts.challenge.replace(/-/g, '+').replace(/_/g, '/')), c => c.charCodeAt(0));
-        opts.user.id = new TextEncoder().encode(opts.user.id);
-
-        const cred = await navigator.credentials.create({ publicKey: opts });
-        if (cred) {
-            const resVerify = await fetch('/api/passkey/register-verify', { 
-                method: 'POST', 
-                headers: {
-                    'Content-Type': 'application/json', 
-                    'Authorization': 'Bearer ' + token
-                }, 
-                body: JSON.stringify({ 
-                    id: cred.id,
-                    rawId: btoa(String.fromCharCode.apply(null, new Uint8Array(cred.rawId)))
-                }) 
-            });
-            const d = await resVerify.json(); 
-            if (d.success) alert("Hardware security key registered successfully!");
-            else alert("Storage Error: " + d.error);
-        }
-    } catch (err) { 
-        alert("Passkey initialization failed. HTTPS connection or Localhost is strictly required."); 
-    }
-}
-
-async function loginWithPasskey() {
-    const email = document.getElementById('auth-email').value;
-    if (!email) return alert("Please enter your email to find your bound passkey.");
-
-    try {
-        const resOpts = await fetch('/api/passkey/login-options', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ email })
-        });
-        const opts = await resOpts.json();
-        if (opts.error) return alert("Error: " + opts.error);
-
-        opts.challenge = Uint8Array.from(atob(opts.challenge.replace(/-/g, '+').replace(/_/g, '/')), c => c.charCodeAt(0));
-        if (opts.allowCredentials) {
-            opts.allowCredentials.forEach(item => {
-                item.id = Uint8Array.from(atob(item.id.replace(/-/g, '+').replace(/_/g, '/')), c => c.charCodeAt(0));
-            });
-        }
-
-        const assertion = await navigator.credentials.get({ publicKey: opts });
-        if (assertion) {
-            const resVerify = await fetch('/api/passkey/login-verify', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    email,
-                    id: assertion.id
-                })
-            });
-            const d = await resVerify.json();
-            if (d.success) {
-                alert("Sign in via Passkey successfully!");
-                token = d.token;
-                localStorage.setItem('token', token);
-                routeManager();
+        // Xử lý định tuyến đường dẫn liên kết công khai
+        async function router() {
+            const path = window.location.pathname;
+            if (path.startsWith('/group/')) {
+                const groupId = path.split('/').pop();
+                loadPublicGroupView(groupId);
             } else {
-                alert("Verification Error: " + d.error);
+                if (token) {
+                    initApp();
+                } else {
+                    document.getElementById('auth-screen').style.display = 'block';
+                }
             }
         }
-    } catch (err) {
-        alert("Passkey login negotiation failed.");
-    }
-}
 
-async function loadGroupDetails(groupId) {
-    if (!token) {
-        alert("Please login first to join this group.");
-        window.location.href = '/';
-        return;
-    }
-    try {
-        const response = await fetch(`/api/groups/${groupId}`, {
-            method: 'GET',
-            headers: { 'Authorization': 'Bearer ' + token }
-        });
-        const data = await response.json();
-        if (!response.ok) {
-            alert("Session expired. Please sign in again.");
-            handleLogout();
-        } else {
-            document.getElementById('auth-box').style.display = 'none';
-            document.getElementById('settings-box').style.display = 'none';
-            document.getElementById('profile-view-box').style.display = 'block';
-            document.getElementById('view-name').innerText = "Group: " + data.groupId;
-            document.getElementById('view-id').innerText = "Access Status: " + data.status;
+        // Tải cấu trúc màn hình liên kết Nhóm công khai
+        async function loadPublicGroupView(groupId) {
+            try {
+                const res = await fetch(`/api/groups/public/${groupId}`);
+                if (!res.ok) {
+                    alert("Nhóm không tồn tại hoặc đã bị xóa.");
+                    window.location.href = '/';
+                    return;
+                }
+                const group = await res.json();
+                
+                document.getElementById('auth-screen').style.display = 'none';
+                document.getElementById('app-screen').style.display = 'none';
+                document.getElementById('public-group-screen').style.display = 'block';
+
+                document.getElementById('pub-group-name').innerText = "👥 Nhóm: " + group.name;
+                document.getElementById('pub-group-desc').innerText = group.description || "Không có mô tả.";
+                if(group.avatar) document.getElementById('pub-group-avatar').style.backgroundImage = `url(${group.avatar})`;
+
+                const actionZone = document.getElementById('pub-group-action-zone');
+                if (!token) {
+                    // Nếu chưa đăng nhập -> Hiển thị thông báo yêu cầu đăng nhập trước
+                    actionZone.innerHTML = `
+                        <p style="font-size:13px; color:#ef4444; margin-bottom:10px;"><i class="fa-solid fa-lock"></i> Đăng nhập để tham gia nhóm này.</p>
+                        <button class="auth-submit" onclick="goToLoginWithRedirect()">ĐI ĐẾN ĐĂNG NHẬP</button>
+                    `;
+                } else {
+                    // Nếu đã đăng nhập -> Kiểm tra xem đã là thành viên chưa
+                    const memberRes = await fetch(`/api/groups/check-membership/${groupId}`, {
+                        headers: { 'Authorization': 'Bearer ' + token }
+                    });
+                    const memberData = await memberRes.json();
+
+                    if (memberData.isMember) {
+                        actionZone.innerHTML = `<button class="auth-submit" style="background:#10b981;" onclick="window.location.href='/'">TRUY CẬP PHÒNG CHAT</button>`;
+                    } else {
+                        actionZone.innerHTML = `<button class="auth-submit" onclick="joinGroupPublic('${groupId}')">XÁC NHẬN THAM GIA NHÓM</button>`;
+                    }
+                }
+            } catch (err) {
+                window.location.href = '/';
+            }
         }
-    } catch (err) {
-        handleLogout();
-    }
-}
 
-function handleLogout() {
-    token = null;
-    localStorage.removeItem('token');
-    clearInterval(qrInterval);
-    window.location.href = '/';
-}
-</script>
+        function goToLoginWithRedirect() {
+            document.getElementById('public-group-screen').style.display = 'none';
+            document.getElementById('auth-screen').style.display = 'block';
+        }
+
+        async function joinGroupPublic(groupId) {
+            const res = await fetch('/api/groups/join-public', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+                body: JSON.stringify({ group_id: groupId })
+            });
+            if (res.ok) {
+                alert("Đã tham gia nhóm thành công!");
+                window.location.href = '/';
+            } else {
+                alert("Tham gia nhóm thất bại.");
+            }
+        }
+
+        function toggleAuthMode() {
+            isRegisterMode = !isRegisterMode;
+            document.getElementById('auth-name').style.display = isRegisterMode ? 'block' : 'none';
+            document.getElementById('btn-submit-auth').innerText = isRegisterMode ? 'ĐĂNG KÝ HỘI VIÊN' : 'ĐĂNG NHẬP HỆ THỐNG';
+        }
+
+        async function sendAuthOtp() {
+            const email = document.getElementById('auth-email').value;
+            if(!email) return alert("Vui lòng điền Email trước!");
+            const r = await fetch('/api/auth/send-otp', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ email }) });
+            const d = await r.json(); alert(d.message || d.error);
+        }
+
+        async function submitAuth() {
+            const email = document.getElementById('auth-email').value;
+            const password = document.getElementById('auth-password').value;
+            const otp = document.getElementById('auth-otp').value;
+            const name = isRegisterMode ? document.getElementById('auth-name').value : "User";
+
+            const endpoint = isRegisterMode ? '/api/auth/register' : '/api/auth/login';
+            const r = await fetch(endpoint, { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ email, password, name, otp }) });
+            const d = await r.json();
+            
+            if (d.token) {
+                localStorage.setItem('gold_token', d.token);
+                window.location.reload();
+            } else {
+                alert(d.error);
+            }
+        }
+
+        async function openQrLoginModal() {
+            const r = await fetch('/api/auth/qr-generate');
+            const d = await r.json();
+            
+            document.getElementById('login-qr-container').innerHTML = '';
+            new QRCode(document.getElementById('login-qr-container'), { text: d.qr_data, width: 180, height: 180 });
+            openModal('qr-login-modal');
+            
+            if(qrCheckInterval) clearInterval(qrCheckInterval);
+            qrCheckInterval = setInterval(async () => {
+                const res = await fetch(`/api/auth/qr-check/${d.session_id}`);
+                const sd = await res.json();
+                if(sd.status === 'success') {
+                    clearInterval(qrCheckInterval);
+                    localStorage.setItem('gold_token', sd.token);
+                    window.location.reload();
+                }
+            }, 3000);
+        }
+
+        async function initApp() {
+            document.getElementById('auth-screen').style.display = 'none';
+            document.getElementById('app-screen').style.display = 'flex';
+            document.getElementById('user-avatar-btn').style.backgroundImage = `url('https://placehold.co/150x150/eab308/ffffff?text=User')`;
+        }
+
+        function openModal(id) { document.getElementById(id).style.display = 'flex'; }
+        function closeModal(id) { document.getElementById(id).style.display = 'none'; if(id==='qr-login-modal'&&qrCheckInterval) clearInterval(qrCheckInterval); }
+        function logout() { localStorage.removeItem('gold_token'); window.location.reload(); }
+    </script>
 </body>
 </html>
