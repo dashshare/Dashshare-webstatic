@@ -1,428 +1,246 @@
 <!DOCTYPE html>
-<html lang="vi">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>DashShare Gold</title>
-    <script src="/socket.io/socket.io.js"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-    <script src="https://unpkg.com/html5-qrcode"></script>
     <style>
-        :root {
-            --gold-light: #fef08a; --gold-primary: #eab308; --gold-dark: #a16207;
-            --border-color: #e2e8f0; --text-main: #0f172a; --text-sub: #475569;
-        }
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: system-ui, sans-serif; }
-        body { background: #f1f5f9; color: var(--text-main); display: flex; height: 100vh; overflow: hidden; }
-        
-        .auth-container { position: fixed; inset: 0; background: #f1f5f9; display: flex; justify-content: center; align-items: center; z-index: 999; }
-        .auth-card { background: #fff; padding: 30px; border-radius: 16px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); width: 100%; max-width: 400px; border: 1px solid var(--border-color); }
-        .auth-input { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #cbd5e1; border-radius: 8px; outline: none; font-size: 14px; }
-        .auth-submit { width: 100%; padding: 12px; background: var(--gold-primary); color: #fff; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; margin-top: 8px; display: inline-flex; align-items: center; justify-content: center; gap: 8px; font-size: 14px; }
-        .auth-submit:hover { background: var(--gold-dark); }
-        
-        .app-layout { display: none; width: 100%; height: 100%; }
-        .nav-sidebar { width: 68px; background: #1e1b4b; display: flex; flex-direction: column; align-items: center; padding: 24px 0; gap: 20px; }
-        .nav-avatar { width: 44px; height: 44px; border-radius: 50%; background-size: cover; background-position: center; cursor: pointer; border: 2px solid var(--gold-light); }
-        .nav-item { font-size: 22px; color: rgba(255,255,255,0.5); cursor: pointer; text-align: center; width: 100%; padding: 10px 0; position: relative; }
-        .nav-item.active { color: var(--gold-primary); }
-        .badge { position: absolute; top: 2px; right: 10px; background: #ef4444; color: #fff; font-size: 10px; padding: 2px 6px; border-radius: 10px; font-weight: bold; }
-        
-        .list-panel { width: 320px; background: #fff; border-right: 1px solid var(--border-color); display: flex; flex-direction: column; }
-        .panel-header { padding: 16px; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; }
-        .chat-list { flex: 1; overflow-y: auto; }
-        .section-title { font-size: 12px; font-weight: 700; color: var(--text-sub); padding: 12px 16px 4px 16px; text-transform: uppercase; display: flex; justify-content: space-between; align-items: center; }
-        
-        .chat-item { padding: 12px 16px; border-bottom: 1px solid #f8fafc; cursor: pointer; display: flex; align-items: center; gap: 10px; }
-        .chat-item:hover { background: #f8fafc; }
-        .item-avatar { width: 38px; height: 38px; border-radius: 50%; background-size: cover; background-position: center; border: 1px solid var(--border-color); }
-        
-        .content-view { flex: 1; display: flex; flex-direction: column; background: #f8fafc; }
-        .chat-view-panel { display: flex; flex-direction: column; flex: 1; }
-        .qr-tab-panel { display: none; flex: 1; flex-direction: column; align-items: center; justify-content: center; background: #fff; padding: 40px; }
-        
-        /* GIAO DIỆN TAB DANH BẠ VÀ NHÓM XÃ HỘI */
-        .contacts-tab-panel { display: none; flex: 1; flex-direction: column; background: #fff; padding: 24px; overflow-y: auto; }
-        .contact-card { display: flex; align-items: center; justify-content: space-between; padding: 12px; border: 1px solid var(--border-color); border-radius: 8px; margin-bottom: 8px; }
-        .sm-btn { padding: 6px 12px; border: none; border-radius: 6px; font-size: 12px; font-weight: 600; cursor: pointer; }
-        
-        .chat-header { padding: 16px; background: #fff; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; }
-        .msg-area { flex: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 14px; }
-        .msg-row { display: flex; flex-direction: column; align-items: flex-start; } 
-        .msg-row.me { align-items: flex-end; }
-        .msg-sender-name { font-size: 11px; font-weight: 600; color: var(--text-sub); margin-bottom: 3px; margin-left: 4px; }
-        .msg-row.me .msg-sender-name { margin-left: 0; margin-right: 4px; }
-        .msg-bubble { max-width: 60%; padding: 10px 14px; border-radius: 12px; background: #fff; border: 1px solid var(--border-color); font-size: 14px; }
-        .msg-row.me .msg-bubble { background: var(--gold-light); }
-        .chat-img-preview { max-width: 240px; max-height: 180px; border-radius: 8px; margin-top: 5px; display: block; border: 1px solid var(--border-color); }
-        
-        .input-bar { padding: 16px; background: #fff; border-top: 1px solid var(--border-color); display: flex; gap: 10px; align-items: center; }
-        .input-bar input { flex: 1; padding: 12px; border: 1px solid #cbd5e1; border-radius: 8px; outline: none; }
-        
-        .modal { position: fixed; inset: 0; background: rgba(0,0,0,0.4); display: none; justify-content: center; align-items: center; z-index: 10000; backdrop-filter: blur(4px); }
-        .modal-card { background: #fff; padding: 25px; border-radius: 16px; width: 90%; max-width: 460px; max-height: 90vh; overflow-y: auto; }
-        
-        .profile-cover-preview { width: 100%; height: 120px; border-radius: 8px; background-size: cover; background-position: center; margin-bottom: -40px; border: 1px solid var(--border-color); }
-        .profile-avatar-preview { width: 80px; height: 80px; border-radius: 50%; border: 3px solid #fff; background-size: cover; background-position: center; margin-left: 20px; position: relative; }
-        
-        .danger-zone { margin-top: 20px; padding-top: 15px; border-top: 2px dashed #ef4444; }
-        .danger-box { background: #fff5f5; border: 1px solid #fed7d7; padding: 12px; border-radius: 8px; margin-top: 8px; }
-        .link-shortener-box { background: #f0fdf4; border: 1px solid #bbf7d0; padding: 10px; border-radius: 8px; font-size: 13px; color: #15803d; margin: 8px 0; display: flex; justify-content: space-between; align-items: center; }
+        body { font-family: Arial, sans-serif; background-color: #f0f2f5; display: flex; flex-direction: column; justify-content: center; align-items: center; min-height: 100vh; margin: 0; padding: 20px; box-sizing: border-box; }
+        .auth-container, .settings-container, .profile-view-container { background: #fff; padding: 30px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); width: 340px; text-align: center; margin-bottom: 20px; display: none; }
+        .brand-title { color: #b58900; font-size: 24px; font-weight: bold; margin-bottom: 5px; }
+        .brand-sub { color: #666; font-size: 13px; margin-bottom: 20px; }
+        .input-group { margin-bottom: 12px; }
+        .auth-input { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box; font-size: 14px; }
+        .btn { width: 100%; padding: 12px; border: none; border-radius: 6px; font-weight: bold; font-size: 14px; cursor: pointer; margin-top: 8px; }
+        .btn-yellow { background-color: #e6a23c; color: white; }
+        .btn-green { background-color: #13ce66; color: white; }
+        .btn-navy { background-color: #409eff; color: white; }
+        .btn-dark { background-color: #34495e; color: white; }
+        .toggle-link { margin-top: 15px; display: block; color: #e6a23c; font-size: 13px; text-decoration: none; }
+        .qr-zone { display: none; margin-top: 15px; padding: 10px; border: 1px dashed #ccc; }
+        #qr-canvas { width: 150px; height: 150px; margin: 0 auto; }
+        .avatar-img { width: 80px; height: 80px; border-radius: 50%; object-fit: cover; border: 3px solid #b58900; margin-bottom: 10px; }
     </style>
+    <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.1/build/qrcode.min.js"></script>
 </head>
 <body>
 
-    <div id="auth-screen" class="auth-container">
-        <div class="auth-card">
-            <h2 style="color: var(--gold-dark); margin-bottom: 20px; text-align:center;">DashShare Gold</h2>
-            <input type="text" id="auth-name" class="auth-input" placeholder="Tên thành viên mới" style="display: none;">
-            <input type="email" id="auth-email" class="auth-input" placeholder="Địa chỉ Email">
-            <div style="display: flex; gap: 8px; margin: 4px 0;">
-                <input type="text" id="auth-otp" class="auth-input" placeholder="Mã OTP 6 số" style="margin:0;">
-                <button onclick="sendAuthOtp()" style="padding:12px 15px; background:#3b82f6; color:#fff; border:none; border-radius:8px; font-size:13px; font-weight:600; cursor:pointer;">Gửi OTP</button>
-            </div>
-            <input type="password" id="auth-password" class="auth-input" placeholder="Mật khẩu bảo mật">
-            <button id="btn-submit-auth" class="auth-submit" onclick="submitAuth()">ĐĂNG NHẬP</button>
-            <button class="auth-submit" style="background:#10b981;" onclick="loginWithPasskey()"><i class="fa-solid fa-fingerprint"></i> ĐĂNG NHẬP PASSKEY</button>
-            <button class="auth-submit" style="background:#475569;" onclick="openQrLoginModal()"><i class="fa-solid fa-qrcode"></i> QUÉT QR ĐĂNG NHẬP</button>
-            <p onclick="toggleAuthMode()" id="switch-text" style="font-size:13px; margin-top:15px; color:var(--gold-dark); cursor:pointer; text-align:center;">Chưa có tài khoản? Đăng ký ngay</p>
-        </div>
+<div class="auth-container" id="auth-box">
+    <div class="brand-title">DashShare Gold</div>
+    <div class="brand-sub">Ultimate sharing & communication system</div>
+
+    <div class="input-group" id="group-username" style="display: none;">
+        <input type="text" class="auth-input" id="auth-name" placeholder="Display Name">
+    </div>
+    
+    <div class="input-group">
+        <input type="email" class="auth-input" id="auth-email" placeholder="Email Address">
+    </div>
+    
+    <div class="input-group" style="display: flex; gap: 5px;">
+        <input type="text" class="auth-input" id="auth-otp" placeholder="6-digit OTP Code">
+        <button class="btn btn-navy" style="width: auto; margin-top: 0; white-space: nowrap;" onclick="sendOTP()">Send OTP</button>
+    </div>
+    
+    <div class="input-group">
+        <input type="password" class="auth-input" id="auth-password" placeholder="Password">
     </div>
 
-    <div id="app-screen" class="app-layout">
-        <div class="nav-sidebar">
-            <div class="nav-avatar" id="user-avatar-btn" onclick="openProfileModal()"></div>
-            <div class="nav-item active" id="tab-chat-btn" onclick="switchMainTab('chat')"><i class="fa-regular fa-comment-dots"></i></div>
-            <div class="nav-item" id="tab-contacts-btn" onclick="switchMainTab('contacts')">
-                <i class="fa-regular fa-address-book"></i>
-                <span class="badge" id="req-badge" style="display:none;">0</span>
-            </div>
-            <div class="nav-item" id="tab-qr-btn" onclick="switchMainTab('qr')"><i class="fa-solid fa-camera"></i></div>
-            <div class="nav-item" onclick="logout()" style="margin-top: auto;"><i class="fa-solid fa-arrow-right-from-bracket"></i></div>
-        </div>
+    <button class="btn btn-yellow" id="btn-main-action" onclick="handleAuthSubmit()">SIGN IN SYSTEM</button>
+    <button class="btn btn-green" onclick="loginWithPasskey()">SIGN IN WITH PASSKEY</button>
+    <button class="btn btn-dark" onclick="generateQRLogin()">SCAN QR TO SIGN IN</button>
+
+    <div class="qr-zone" id="qr-area">
+        <canvas id="qr-canvas"></canvas>
+        <p style="font-size: 12px; color: #666; margin: 5px 0 0 0;">Scan this QR with your logged-in mobile device</p>
+    </div>
+
+    <a href="#" class="toggle-link" id="link-toggle-auth" onclick="toggleAuthMode(event)">Don't have an account? Register now</a>
+</div>
+
+<div class="settings-container" id="settings-box">
+    <div class="brand-title" style="font-size: 20px;">Profile Settings</div>
+    <p style="font-size: 13px; color: #666;">Manage your security keys and profile data</p>
+    
+    <button class="btn btn-green" onclick="registerHardwarePasskey()">REGISTER HARDWARE PASSKEY</button>
+    <button class="btn btn-dark" style="margin-top: 15px;" onclick="handleLogout()">LOGOUT</button>
+</div>
+
+<div class="profile-view-container" id="profile-view-box">
+    <img src="/storage/default-avatar.png" class="avatar-img" id="view-avatar">
+    <div class="brand-title" style="font-size: 22px;" id="view-name">User Profile</div>
+    <p style="font-size: 14px; color: #666;" id="view-id"></p>
+    <button class="btn btn-dark" onclick="window.location.href='/'">GO TO HOME</button>
+</div>
+
+<script>
+let isLoginMode = true;
+let token = localStorage.getItem('token');
+let qrInterval = null;
+
+document.addEventListener("DOMContentLoaded", () => {
+    routeManager();
+});
+
+function routeManager() {
+    const path = window.location.pathname;
+    
+    if (path.startsWith('/people/')) {
+        const userId = path.split('/').pop();
+        loadPublicProfile(userId);
+    } else if (path.startsWith('/group/')) {
+        const groupId = path.split('/').pop();
+        loadGroupDetails(groupId);
+    } else {
+        if (token) {
+            document.getElementById('auth-box').style.display = 'none';
+            document.getElementById('settings-box').style.display = 'block';
+            document.getElementById('profile-view-box').style.display = 'none';
+        } else {
+            document.getElementById('auth-box').style.display = 'block';
+            document.getElementById('settings-box').style.display = 'none';
+            document.getElementById('profile-view-box').style.display = 'none';
+        }
+    }
+}
+
+async function loadPublicProfile(id) {
+    try {
+        const res = await fetch(`/api/users/public/${id}`);
+        const user = await res.json();
         
-        <div class="list-panel">
-            <div class="panel-header">
-                <h3 style="font-size:16px;">Trò chuyện</h3>
-                <button onclick="openCreateGroupModal()" style="padding:6px 10px; background:var(--gold-primary); border:none; color:#fff; border-radius:6px; font-size:12px; font-weight:600; cursor:pointer;"><i class="fa-solid fa-plus"></i> Tạo Nhóm</button>
-            </div>
-            <div class="chat-list">
-                <div class="section-title">Nhóm chat đã tham gia</div>
-                <div id="group-items"></div>
-                <div class="section-title">Bạn bè trực tuyến</div>
-                <div id="friend-items"></div>
-            </div>
-        </div>
-        
-        <div class="content-view">
-            <div id="panel-chat-view" class="chat-view-panel">
-                <div class="chat-header">
-                    <div>
-                        <h3 id="chat-title">Hệ thống DashShare</h3>
-                        <p id="chat-status" style="font-size:12px; color:var(--text-sub);">Chọn phòng chat hoặc truy cập danh bạ</p>
-                    </div>
-                    <div id="chat-actions-box"></div>
-                </div>
-                <div class="msg-area" id="msg-box"></div>
-                <div class="input-bar">
-                    <label for="chat-file-input" style="cursor:pointer; padding:10px; font-size:18px; color:var(--text-sub);"><i class="fa-solid fa-paperclip"></i></label>
-                    <input type="file" id="chat-file-input" style="display:none;" onchange="uploadChatFile()">
-                    <input type="text" id="msg-input" placeholder="Nhập lời muốn nói...">
-                    <button class="auth-submit" style="width:auto; margin:0; padding:0 20px;" onclick="sendMessage()">GỬI</button>
-                </div>
-            </div>
-
-            <div id="panel-contacts-view" class="contacts-tab-panel">
-                <h2 style="margin-bottom:20px; font-size:20px;"><i class="fa-regular fa-address-book"></i> Danh bạ DashShare</h2>
-                
-                <h3 class="section-title" style="padding-left:0; color:#ef4444; margin-bottom:10px;">Lời mời kết bạn đang chờ bạn duyệt</h3>
-                <div id="contacts-requests-list" style="margin-bottom:24px;"></div>
-
-                <h3 class="section-title" style="padding-left:0; margin-bottom:10px;">Bạn bè đã kết bạn (${window.location.origin}/people/:id)</h3>
-                <div id="contacts-friends-list" style="margin-bottom:24px;"></div>
-
-                <h3 class="section-title" style="padding-left:0; margin-bottom:10px;">Nhóm trò chuyện đã gia nhập (${window.location.origin}/group/:id)</h3>
-                <div id="contacts-groups-list"></div>
-            </div>
-
-            <div id="panel-qr-view" class="qr-tab-panel">
-                <h3 style="margin-bottom: 10px;"><i class="fa-solid fa-qrcode"></i> Quét mã xác thực</h3>
-                <div id="reader-element" style="width:100%; max-width:340px; background:#fff; border-radius:12px; overflow:hidden; border:1px solid var(--border-color);"></div>
-                <div id="qr-scan-status-text" style="margin-top:15px; font-size:13px; font-weight:600; color:var(--gold-dark);">Sẵn sàng quét...</div>
-            </div>
-        </div>
-    </div>
-
-    <div class="modal" id="profile-modal">
-        <div class="modal-card">
-            <h3>Cài đặt trang cá nhân</h3>
-            <div id="p-cover-prev" class="profile-cover-preview"></div>
-            <div id="p-avatar-prev" class="profile-avatar-preview"></div>
-            <div style="height: 45px;"></div>
-            <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:10px;">
-                <input type="file" id="p-avatar-file" accept="image/*" style="font-size:11px;">
-                <input type="file" id="p-cover-file" accept="image/*" style="font-size:11px;">
-            </div>
-            <label style="font-size:12px; font-weight:600;">Tên hiển thị:</label>
-            <input type="text" id="p-name" class="auth-input">
-            <label style="font-size:12px; font-weight:600;">Tiểu sử (Bio):</label>
-            <input type="text" id="p-bio" class="auth-input">
-            <label style="font-size:12px; font-weight:600;">Link Hồ sơ công khai chia sẻ (ID ngẫu nhiên 12 số):</label>
-            <div class="link-shortener-box">
-                <span id="user-shortlink-text"></span>
-                <i class="fa-regular fa-copy" style="cursor:pointer;" onclick="copyShortLink('user-shortlink-text')"></i>
-            </div>
-            <label style="font-size:12px; font-weight:600;">Mã PIN (4 số):</label>
-            <input type="text" id="p-pin" class="auth-input">
-            <button class="auth-submit" style="background:#10b981;" onclick="registerPasskey()"><i class="fa-solid fa-key"></i> ĐĂNG KÝ PASSKEY PHẦN CỨNG</button>
-            <button class="auth-submit" onclick="saveProfile()">LƯU HỒ SƠ</button>
-            <div class="danger-zone">
-                <h4 style="color:#ef4444; font-size:13px;"><i class="fa-solid fa-triangle-exclamation"></i> Danger Zone (Vùng nguy hiểm)</h4>
-                <div class="danger-box">
-                    <p style="font-size:12px; color:#7f1d1d; margin-bottom:8px;">Xóa tài khoản đồng nghĩa xóa toàn bộ thông tin đăng nhập, cấu hình khóa passkey và lịch sử tin nhắn vĩnh viễn.</p>
-                    <button onclick="deleteAccount()" style="padding:8px 12px; background:#ef4444; color:#fff; border:none; border-radius:6px; font-size:11px; font-weight:600; cursor:pointer;">XÓA TÀI KHOẢN VĨNH VIỄN</button>
-                </div>
-            </div>
-            <button class="auth-submit" style="background:#94a3b8; margin-top:10px;" onclick="closeModal('profile-modal')">Đóng</button>
-        </div>
-    </div>
-
-    <div class="modal" id="group-modal">
-        <div class="modal-card">
-            <h3 id="group-modal-title">Tạo nhóm mới</h3>
-            <input type="file" id="g-avatar-file" accept="image/*" class="auth-input">
-            <input type="text" id="g-name" class="auth-input" placeholder="Tên nhóm...">
-            <input type="text" id="g-desc" class="auth-input" placeholder="Mô tả nhóm...">
-            <div class="link-shortener-box" id="group-shortlink-box" style="display:none;">
-                <span id="group-shortlink-text"></span>
-                <i class="fa-regular fa-copy" style="cursor:pointer;" onclick="copyShortLink('group-shortlink-text')"></i>
-            </div>
-            <button class="auth-submit" id="btn-group-submit" onclick="submitGroupAction()">XÁC NHẬN</button>
-            <button class="auth-submit" style="background:#94a3b8; margin-top:10px;" onclick="closeModal('group-modal')">Hủy</button>
-        </div>
-    </div>
-
-    <div class="modal" id="qr-login-modal">
-        <div class="modal-card" style="text-align:center;">
-            <h3>Quét QR đăng nhập nhanh</h3>
-            <div id="login-qr-container" style="display:inline-block; padding:12px; background:#fff; border-radius:8px; margin:15px 0;"></div>
-            <button class="auth-submit" style="background:#94a3b8;" onclick="closeModal('qr-login-modal')">Đóng</button>
-        </div>
-    </div>
-
-    <script>
-        let token = localStorage.getItem('gold_token') || '';
-        let currentUser = null; let isRegisterMode = false; let activeChatId = '';
-        let html5QrScanner = null; let editingGroupId = null; let socket = null;
-
-        if (token) initApp();
-
-        function toggleAuthMode() {
-            isRegisterMode = !isRegisterMode;
-            document.getElementById('auth-name').style.display = isRegisterMode ? 'block' : 'none';
-            document.getElementById('btn-submit-auth').innerText = isRegisterMode ? 'ĐĂNG KÝ HỘI VIÊN' : 'ĐĂNG NHẬP';
+        if (!res.ok) {
+            alert(user.error);
+            window.location.href = '/';
+            return;
         }
 
-        async function sendAuthOtp() {
-            const email = document.getElementById('auth-email').value; if(!email) return alert("Nhập Email!");
-            const r = await fetch('/api/auth/send-otp', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ email }) });
-            const d = await r.json(); alert(d.message || d.error);
-        }
+        document.getElementById('auth-box').style.display = 'none';
+        document.getElementById('settings-box').style.display = 'none';
+        document.getElementById('profile-view-box').style.display = 'block';
 
-        async function submitAuth() {
-            const email = document.getElementById('auth-email').value; const password = document.getElementById('auth-password').value;
-            const name = isRegisterMode ? document.getElementById('auth-name').value : "User"; const otp = document.getElementById('auth-otp').value;
-            const endpoint = isRegisterMode ? '/api/auth/register' : '/api/auth/login';
-            const r = await fetch(endpoint, { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ email, password, name, otp }) });
-            const d = await r.json();
-            if (d.token) { localStorage.setItem('gold_token', d.token); document.cookie = `user_id=${d.user?.id || ''}; path=/`; window.location.reload(); } else alert(d.error);
-        }
+        document.getElementById('view-name').innerText = user.name;
+        document.getElementById('view-id').innerText = "ID: " + user.id;
+        document.getElementById('view-avatar').src = user.avatar;
+    } catch (err) {
+        window.location.href = '/';
+    }
+}
 
-        function switchMainTab(tabName) {
-            document.getElementById('tab-chat-btn').classList.remove('active');
-            document.getElementById('tab-contacts-btn').classList.remove('active');
-            document.getElementById('tab-qr-btn').classList.remove('active');
+function toggleAuthMode(e) {
+    e.preventDefault();
+    isLoginMode = !isLoginMode;
+    clearInterval(qrInterval);
+    document.getElementById('qr-area').style.display = 'none';
+    
+    const nameField = document.getElementById('group-username');
+    const mainBtn = document.getElementById('btn-main-action');
+    const toggleLink = document.getElementById('link-toggle-auth');
+
+    if (isLoginMode) {
+        nameField.style.display = 'none';
+        mainBtn.innerText = 'SIGN IN SYSTEM';
+        toggleLink.innerText = "Don't have an account? Register now";
+    } else {
+        nameField.style.display = 'block';
+        mainBtn.innerText = 'REGISTER MEMBERSHIP';
+        toggleLink.innerText = 'Already have an account? Back to Login';
+    }
+}
+
+async function sendOTP() {
+    const email = document.getElementById('auth-email').value;
+    if (!email) return alert("Please enter your email address first.");
+    
+    try {
+        const res = await fetch('/api/auth/send-otp', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email })
+        });
+        const data = await res.json();
+        if (res.ok) alert("OTP code has been sent to your email.");
+        else alert("Error: " + data.error);
+    } catch (err) {
+        alert("Failed to connect to the server.");
+    }
+}
+
+async function handleAuthSubmit() {
+    const email = document.getElementById('auth-email').value;
+    const password = document.getElementById('auth-password').value;
+    const otp = document.getElementById('auth-otp').value;
+    const name = document.getElementById('auth-name').value;
+
+    const endpoint = isLoginMode ? '/api/auth/login' : '/api/auth/register';
+    const payload = isLoginMode ? { email, password, otp } : { email, password, name, otp };
+
+    try {
+        const response = await fetch(endpoint, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+        const data = await response.json();
+
+        if (response.ok) {
+            alert(isLoginMode ? "Sign in successfully!" : "Registration successfully!");
+            token = data.token;
+            localStorage.setItem('token', data.token);
+            routeManager();
+        } else {
+            alert("Error: " + (data.error || "Authentication failed."));
+        }
+    } catch (err) {
+        alert("System connection error. Please try again.");
+    }
+}
+
+async function generateQRLogin() {
+    try {
+        const response = await fetch('/api/auth/qr-generate');
+        const data = await response.json();
+        if (!response.ok) return alert("Failed to build QR session.");
+
+        document.getElementById('qr-area').style.display = 'block';
+        QRCode.toCanvas(document.getElementById('qr-canvas'), data.qrToken, { width: 150 });
+
+        clearInterval(qrInterval);
+        qrInterval = setInterval(async () => {
+            const checkRes = await fetch(`/api/auth/qr-check/${data.qrToken}`);
+            const checkData = await checkRes.json();
             
-            document.getElementById('panel-chat-view').style.display = 'none';
-            document.getElementById('panel-contacts-view').style.display = 'none';
-            document.getElementById('panel-qr-view').style.display = 'none';
-
-            if (tabName === 'chat') {
-                document.getElementById('tab-chat-btn').classList.add('active');
-                document.getElementById('panel-chat-view').style.display = 'flex';
-                closeCamera();
-            } else if (tabName === 'contacts') {
-                document.getElementById('tab-contacts-btn').classList.add('active');
-                document.getElementById('panel-contacts-view').style.display = 'flex';
-                closeCamera();
-                syncSocialContacts(); // Đồng bộ tải danh bạ thời gian thực
-            } else {
-                document.getElementById('tab-qr-btn').classList.add('active');
-                document.getElementById('panel-qr-view').style.display = 'flex';
-                html5QrScanner = new Html5Qrcode("reader-element");
-                html5QrScanner.start({ facingMode: "environment" }, { fps: 10, qrbox: 220 }, async (txt) => {
-                    if (txt.startsWith('dashshare-login:')) {
-                        const r = await fetch('/api/auth/qr-authorize', { method: 'POST', headers: {'Content-Type':'application/json', 'Authorization': 'Bearer '+token}, body: JSON.stringify({ session_id: txt.split(':')[1] }) });
-                        const d = await r.json(); if(d.success) { alert("Xác thực thành công!"); switchMainTab('chat'); }
-                    }
-                }, ()=>{});
+            if (checkData.status === 'success') {
+                clearInterval(qrInterval);
+                document.getElementById('qr-area').style.display = 'none';
+                alert("Sign in via QR successfully!");
+                token = checkData.token;
+                localStorage.setItem('token', token);
+                routeManager();
+            } else if (checkData.status === 'expired') {
+                clearInterval(qrInterval);
+                document.getElementById('qr-area').style.display = 'none';
+                alert("QR session expired. Please generate again.");
             }
-        }
-        function closeCamera() { if(html5QrScanner) { html5QrScanner.stop().then(()=>{html5QrScanner=null;}).catch(()=>{}); } }
+        }, 3000);
+    } catch (err) {
+        alert("Failed to initialize login QR Code.");
+    }
+}
 
-        async function initApp() {
-            const r = await fetch('/api/profile/update', { method: 'POST', headers: {'Authorization': 'Bearer ' + token}, body: new FormData() });
-            const d = await r.json();
-            if (d.user) {
-                currentUser = d.user;
-                document.cookie = `user_id=${currentUser.id}; path=/`;
-                document.getElementById('auth-screen').style.display = 'none';
-                document.getElementById('app-screen').style.display = 'flex';
-                document.getElementById('user-avatar-btn').style.backgroundImage = `url(${currentUser.avatar})`;
-                
-                socket = io();
-                socket.on('msg_receive', (data) => {
-                    if(data.chat_id === activeChatId) {
-                        appendMessageBubble(data.sender_id === currentUser.id, data.sender_name, data.text, data.file_url);
-                    }
-                });
-                syncSidebar();
-                syncSocialContacts();
-            }
-        }
-
-        // Tải danh sách chat nhanh ở Sidebar trái (Chỉ hiện bạn bè đã kết bạn và nhóm đã tham gia)
-        function syncSidebar() {
-            fetch('/api/sidebar/list', { headers: {'Authorization': 'Bearer ' + token} }).then(r=>r.json()).then(data => {
-                const friendsBox = document.getElementById('friend-items'); friendsBox.innerHTML = '';
-                const groupsBox = document.getElementById('group-items'); groupsBox.innerHTML = '';
-                
-                data.groups.forEach(g => {
-                    const div = document.createElement('div'); div.className = 'chat-item';
-                    div.innerHTML = `<div class="item-avatar" style="background-image:url(${g.avatar})"></div><div><b>👥 ${g.name}</b></div>`;
-                    div.onclick = () => selectChat(g.id, g.name, g.description, true, g);
-                    groupsBox.appendChild(div);
-                });
-                data.friends.forEach(f => {
-                    const div = document.createElement('div'); div.className = 'chat-item';
-                    div.innerHTML = `<div class="item-avatar" style="background-image:url(${f.avatar})"></div><div><b>👤 ${f.name}</b></div>`;
-                    div.onclick = () => selectChat(f.id, f.name, 'Bạn bè', false);
-                    friendsBox.appendChild(div);
-                });
-            });
-        }
-
-        // ĐỒNG BỘ DANH BẠ TOÀN DIỆN (TAB SOCIAL)
-        async function syncSocialContacts() {
-            const r = await fetch('/api/social/contacts', { headers: {'Authorization': 'Bearer ' + token} });
-            const data = await r.json();
-
-            // Xử lý badge lời mời kết bạn chưa duyệt
-            const badge = document.getElementById('req-badge');
-            if (data.requests.length > 0) {
-                badge.innerText = data.requests.length; badge.style.display = 'block';
-            } else { badge.style.display = 'none'; }
-
-            // Lời mời kết bạn đến
-            const reqBox = document.getElementById('contacts-requests-list'); reqBox.innerHTML = data.requests.length === 0 ? '<p style="font-size:13px; color:var(--text-sub);">Không có lời mời kết bạn nào.</p>' : '';
-            data.requests.forEach(req => {
-                const div = document.createElement('div'); div.className = 'contact-card';
-                div.innerHTML = `<div style="display:flex; align-items:center; gap:10px;"><div class="item-avatar" style="background-image:url(${req.avatar})"></div><b>${req.name}</b></div>
-                <div><button class="sm-btn" style="background:#10b981; color:#fff;" onclick="executeSocialAction('/api/social/friend-request', '${req.id}')">Chấp nhận</button></div>`;
-                reqBox.appendChild(div);
-            });
-
-            // Danh sách bạn bè chính thức
-            const friBox = document.getElementById('contacts-friends-list'); friBox.innerHTML = data.friends.length === 0 ? '<p style="font-size:13px; color:var(--text-sub);">Bạn chưa kết bạn với ai. Hãy chia sẻ link public cá nhân để kết nối!</p>' : '';
-            data.friends.forEach(f => {
-                const div = document.createElement('div'); div.className = 'contact-card';
-                div.innerHTML = `<div style="display:flex; align-items:center; gap:10px;"><div class="item-avatar" style="background-image:url(${f.avatar})"></div><div><b>${f.name}</b><br><span style="font-size:11px;color:var(--text-sub)">ID: ${f.id}</span></div></div>
-                <div><button class="sm-btn" style="background:#ef4444; color:#fff;" onclick="executeSocialAction('/api/social/unfriend', '${f.id}')">Hủy kết bạn</button></div>`;
-                friBox.appendChild(div);
-            });
-
-            // Danh sách nhóm chat đã gia nhập kèm tính năng RỜI NHÓM công khai
-            const grBox = document.getElementById('contacts-groups-list'); grBox.innerHTML = data.groups.length === 0 ? '<p style="font-size:13px; color:var(--text-sub);">Chưa tham gia nhóm nào.</p>' : '';
-            data.groups.forEach(g => {
-                const div = document.createElement('div'); div.className = 'contact-card';
-                div.innerHTML = `<div style="display:flex; align-items:center; gap:10px;"><div class="item-avatar" style="background-image:url(${g.avatar})"></div><div><b>${g.name}</b><br><span style="font-size:11px;color:var(--text-sub)">${g.description || ''}</span></div></div>
-                <div><button class="sm-btn" style="background:#ef4444; color:#fff;" onclick="executeSocialAction('/api/social/group-leave', '${g.id}')"><i class="fa-solid fa-right-from-bracket"></i> Rời nhóm</button></div>`;
-                grBox.appendChild(div);
-            });
-        }
-
-        async function executeSocialAction(endpoint, id) {
-            const bodyKey = endpoint.includes('group') ? 'group_id' : 'target_id';
-            const r = await fetch(endpoint, { method: 'POST', headers: {'Content-Type':'application/json', 'Authorization': 'Bearer ' + token}, body: JSON.stringify({ [bodyKey]: id }) });
-            const d = await r.json(); if(d.success) { syncSidebar(); syncSocialContacts(); }
-        }
-
-        async function selectChat(id, name, sub, isGroup, groupObj) {
-            activeChatId = id; document.getElementById('chat-title').innerText = name;
-            document.getElementById('chat-status').innerText = sub || '';
-            document.getElementById('msg-box').innerHTML = ''; socket.emit('join_room', id);
-
-            const actionsBox = document.getElementById('chat-actions-box'); actionsBox.innerHTML = '';
-            if(isGroup && groupObj) {
-                const btn = document.createElement('button'); btn.className = 'auth-submit'; btn.style = 'width:auto; margin:0; padding:4px 10px; font-size:11px; background:#475569;';
-                btn.innerHTML = `<i class="fa-solid fa-gear"></i> Setup`; btn.onclick = () => openEditGroupModal(groupObj);
-                actionsBox.appendChild(btn);
-            }
-
-            const res = await fetch(`/api/messages/${id}`, { headers: {'Authorization': 'Bearer ' + token} });
-            const data = await res.json();
-            if(data.messages) data.messages.forEach(msg => appendMessageBubble(msg.sender_id === currentUser.id, msg.sender_name, msg.text, msg.file_url));
-        }
-
-        async function uploadChatFile() {
-            const fileInput = document.getElementById('chat-file-input'); if(!fileInput.files[0]) return;
-            const formData = new FormData(); formData.append('chat_file', fileInput.files[0]);
-            const r = await fetch('/api/chat/upload', { method: 'POST', headers: {'Authorization': 'Bearer ' + token}, body: formData });
-            const d = await r.json();
-            if(d.success) {
-                socket.emit('msg_send', { chat_id: activeChatId, sender_id: currentUser.id, sender_name: currentUser.name, text: `📎 Gửi một tệp đính kèm: ${fileInput.files[0].name}`, file_url: d.file_url });
-                fileInput.value = '';
-            }
-        }
-
-        function sendMessage() {
-            const input = document.getElementById('msg-input'); if(!input.value.trim() || !activeChatId) return;
-            socket.emit('msg_send', { chat_id: activeChatId, sender_id: currentUser.id, sender_name: currentUser.name, text: input.value.trim(), file_url: '' });
-            input.value = '';
-        }
-
-        function appendMessageBubble(isMe, senderName, text, fileUrl) {
-            const box = document.getElementById('msg-box'); const row = document.createElement('div');
-            row.className = isMe ? 'msg-row me' : 'msg-row';
-            let filePreviewHtml = '';
-            if(fileUrl) {
-                const ext = fileUrl.split('.').pop().toLowerCase();
-                if(['png','jpg','jpeg','gif','webp'].includes(ext)) {
-                    filePreviewHtml = `<img src="${fileUrl}" class="chat-img-preview" alt="Preview ảnh">`;
-                } else {
-                    filePreviewHtml = `<br><a href="${fileUrl}" target="_blank" style="font-size:12px; font-weight:600; color:var(--gold-dark);"><i class="fa-solid fa-file-arrow-down"></i> Tải tệp xuống</a>`;
-                }
-            }
-            row.innerHTML = `<div class="msg-sender-name">${senderName}</div><div class="msg-bubble">${text}${filePreviewHtml}</div>`;
-            box.appendChild(row); box.scrollTop = box.scrollHeight;
-        }
-
-        async function registerPasskey() {
+async function registerHardwarePasskey() {
     try {
         const resOpts = await fetch('/api/passkey/register-options', { 
             method: 'POST',
             headers: { 'Authorization': 'Bearer ' + token } 
         }); 
-        
         const opts = await resOpts.json();
-        if (opts.error) return alert("Lỗi: " + opts.error);
+        if (opts.error) return alert("Error: " + opts.error);
 
         opts.challenge = Uint8Array.from(atob(opts.challenge.replace(/-/g, '+').replace(/_/g, '/')), c => c.charCodeAt(0));
         opts.user.id = new TextEncoder().encode(opts.user.id);
 
         const cred = await navigator.credentials.create({ publicKey: opts });
-        
         if (cred) {
             const resVerify = await fetch('/api/passkey/register-verify', { 
                 method: 'POST', 
@@ -435,93 +253,93 @@
                     rawId: btoa(String.fromCharCode.apply(null, new Uint8Array(cred.rawId)))
                 }) 
             });
-            
             const d = await resVerify.json(); 
-            if (d.success) {
-                alert("🎉 Đăng ký thiết bị bảo mật phần cứng thành công!");
-            } else {
-                alert("Lỗi lưu trữ: " + d.error);
-            }
+            if (d.success) alert("Hardware security key registered successfully!");
+            else alert("Storage Error: " + d.error);
         }
     } catch (err) { 
-        console.error(err);
-        alert("Không thể khởi tạo Passkey! Lưu ý: Trình duyệt bắt buộc trang web phải chạy qua HTTPS bảo mật (Hugging Face Spaces đã có sẵn) và bạn cần cấp quyền sinh trắc học cho trình duyệt."); 
+        alert("Passkey initialization failed. HTTPS connection or Localhost is strictly required."); 
     }
 }
 
-        async function loginWithPasskey() {
-            const email = document.getElementById('auth-email').value; if(!email) return alert("Nhập email!");
-            try {
-                const resOpts = await fetch('/api/passkey/login-options', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ email }) });
-                const opts = await resOpts.json();
-                opts.challenge = Uint8Array.from(atob(opts.challenge.replace(/-/g, '+').replace(/_/g, '/')), c => c.charCodeAt(0));
-                opts.allowCredentials = opts.allowCredentials.map(c => ({ ...c, id: Uint8Array.from(atob(c.id.replace(/-/g, '+').replace(/_/g, '/')), x => x.charCodeAt(0)) }));
-                const assertion = await navigator.credentials.get({ publicKey: opts });
-                const resVerify = await fetch('/api/passkey/login-verify', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ email, id: assertion.id }) });
-                const d = await resVerify.json(); if (d.token) { localStorage.setItem('gold_token', d.token); document.cookie = `user_id=${d.user?.id || ''}; path=/`; window.location.reload(); }
-            } catch (err) { alert("Thất bại: " + err); }
+async function loginWithPasskey() {
+    const email = document.getElementById('auth-email').value;
+    if (!email) return alert("Please enter your email to find your bound passkey.");
+
+    try {
+        const resOpts = await fetch('/api/passkey/login-options', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email })
+        });
+        const opts = await resOpts.json();
+        if (opts.error) return alert("Error: " + opts.error);
+
+        opts.challenge = Uint8Array.from(atob(opts.challenge.replace(/-/g, '+').replace(/_/g, '/')), c => c.charCodeAt(0));
+        if (opts.allowCredentials) {
+            opts.allowCredentials.forEach(item => {
+                item.id = Uint8Array.from(atob(item.id.replace(/-/g, '+').replace(/_/g, '/')), c => c.charCodeAt(0));
+            });
         }
 
-        async function deleteAccount() {
-            if(confirm("Xác nhận xóa tài khoản vĩnh viễn khỏi DashShare? Hành động không thể khôi phục.")) {
-                const r = await fetch('/api/profile/delete-account', { method: 'POST', headers: {'Authorization': 'Bearer ' + token} });
-                const d = await r.json(); if(d.success) { alert(d.message); logout(); }
+        const assertion = await navigator.credentials.get({ publicKey: opts });
+        if (assertion) {
+            const resVerify = await fetch('/api/passkey/login-verify', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    email,
+                    id: assertion.id
+                })
+            });
+            const d = await resVerify.json();
+            if (d.success) {
+                alert("Sign in via Passkey successfully!");
+                token = d.token;
+                localStorage.setItem('token', token);
+                routeManager();
+            } else {
+                alert("Verification Error: " + d.error);
             }
         }
+    } catch (err) {
+        alert("Passkey login negotiation failed.");
+    }
+}
 
-        function openCreateGroupModal() {
-            editingGroupId = null; document.getElementById('group-modal-title').innerText = "Tạo nhóm mới";
-            document.getElementById('g-name').value = ''; document.getElementById('g-desc').value = '';
-            document.getElementById('group-shortlink-box').style.display = 'none'; openModal('group-modal');
+async function loadGroupDetails(groupId) {
+    if (!token) {
+        alert("Please login first to join this group.");
+        window.location.href = '/';
+        return;
+    }
+    try {
+        const response = await fetch(`/api/groups/${groupId}`, {
+            method: 'GET',
+            headers: { 'Authorization': 'Bearer ' + token }
+        });
+        const data = await response.json();
+        if (!response.ok) {
+            alert("Session expired. Please sign in again.");
+            handleLogout();
+        } else {
+            document.getElementById('auth-box').style.display = 'none';
+            document.getElementById('settings-box').style.display = 'none';
+            document.getElementById('profile-view-box').style.display = 'block';
+            document.getElementById('view-name').innerText = "Group: " + data.groupId;
+            document.getElementById('view-id').innerText = "Access Status: " + data.status;
         }
-        function openEditGroupModal(g) {
-            editingGroupId = g.id; document.getElementById('group-modal-title').innerText = "Cấu hình nhóm";
-            document.getElementById('g-name').value = g.name; document.getElementById('g-desc').value = g.description;
-            document.getElementById('group-shortlink-text').innerText = `${window.location.origin}/group/${g.id}`;
-            document.getElementById('group-shortlink-box').style.display = 'flex'; openModal('group-modal');
-        }
-        async function submitGroupAction() {
-            const formData = new FormData(); formData.append('name', document.getElementById('g-name').value);
-            formData.append('description', document.getElementById('g-desc').value);
-            const file = document.getElementById('g-avatar-file').files[0]; if(file) formData.append('avatar', file);
-            const url = editingGroupId ? `/api/groups/update/${editingGroupId}` : '/api/groups/create';
-            const r = await fetch(url, { method: 'POST', headers: {'Authorization': 'Bearer ' + token}, body: formData });
-            const d = await r.json(); if(d.success) { closeModal('group-modal'); syncSidebar(); syncSocialContacts(); }
-        }
+    } catch (err) {
+        handleLogout();
+    }
+}
 
-        function openProfileModal() {
-            document.getElementById('p-name').value = currentUser.name; document.getElementById('p-bio').value = currentUser.bio || '';
-            document.getElementById('p-pin').value = currentUser.pin || '';
-            document.getElementById('p-avatar-prev').style.backgroundImage = `url(${currentUser.avatar})`;
-            document.getElementById('p-cover-prev').style.backgroundImage = `url(${currentUser.cover})`;
-            document.getElementById('user-shortlink-text').innerText = `${window.location.origin}/people/${currentUser.id}`;
-            openModal('profile-modal');
-        }
-        async function saveProfile() {
-            const formData = new FormData(); formData.append('name', document.getElementById('p-name').value);
-            formData.append('bio', document.getElementById('p-bio').value); formData.append('pin', document.getElementById('p-pin').value);
-            const ava = document.getElementById('p-avatar-file').files[0]; const cov = document.getElementById('p-cover-file').files[0];
-            if(ava) formData.append('avatar', ava); if(cov) formData.append('cover', cov);
-            const r = await fetch('/api/profile/update', { method: 'POST', headers: {'Authorization': 'Bearer ' + token}, body: formData });
-            const d = await r.json(); if(d.success) { closeModal('profile-modal'); initApp(); }
-        }
-
-        let qrCheckInterval = null;
-        async function openQrLoginModal() {
-            const r = await fetch('/api/auth/qr-generate'); const d = await r.json();
-            document.getElementById('login-qr-container').innerHTML = '';
-            new QRCode(document.getElementById('login-qr-container'), { text: d.qr_data, width: 180, height: 180 });
-            openModal('qr-login-modal'); if(qrCheckInterval) clearInterval(qrCheckInterval);
-            qrCheckInterval = setInterval(async () => {
-                const res = await fetch(`/api/auth/qr-check/${d.session_id}`); const sd = await res.json();
-                if(sd.status === 'success') { clearInterval(qrCheckInterval); localStorage.setItem('gold_token', sd.token); window.location.reload(); }
-            }, 3000);
-        }
-
-        function copyShortLink(id) { navigator.clipboard.writeText(document.getElementById(id).innerText); alert("Đã copy liên kết!"); }
-        function openModal(id) { document.getElementById(id).style.display = 'flex'; }
-        function closeModal(id) { document.getElementById(id).style.display = 'none'; if(id==='qr-login-modal'&&qrCheckInterval) clearInterval(qrCheckInterval); }
-        function logout() { localStorage.removeItem('gold_token'); document.cookie = "user_id=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;"; window.location.reload(); }
-    </script>
+function handleLogout() {
+    token = null;
+    localStorage.removeItem('token');
+    clearInterval(qrInterval);
+    window.location.href = '/';
+}
+</script>
 </body>
 </html>
