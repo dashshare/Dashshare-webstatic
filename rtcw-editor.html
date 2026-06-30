@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Catweb Studio - Workspace Editor</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body { margin:0; padding:0; background:#1e1e1e; color:#ccc; font-family:sans-serif; display:flex; height:100vh; overflow:hidden; }
+        #sidebar { width:260px; background:#252526; border-right:1px solid #3c3c3c; display:flex; flex-direction:column; }
+        #viewport-container { flex:1; background:#111; display:flex; justify-content:center; align-items:center; position:relative; overflow:auto; }
+        #properties-panel { width:300px; background:#252526; border-left:1px solid #3c3c3c; padding:15px; box-sizing:border-box; overflow-y:auto; }
+        .panel-title { font-size:12px; font-weight:bold; text-transform:uppercase; color:#aaa; margin-bottom:10px; border-bottom:1px solid #3c3c3c; padding-bottom:5px; }
+        .block-btn { width:100%; background:#333; color:#ccc; border:1px solid #444; padding:8px; text-align:left; margin-bottom:4px; border-radius:4px; cursor:pointer; font-size:12px; display:flex; align-items:center; gap:8px; }
+        .block-btn:hover { background:#444; color:#fff; }
+        #viewport { width:800px; height:450px; background:#000; position:relative; border:1px dashed #555; box-shadow:0 0 20px rgba(0,0,0,0.8); overflow:hidden; }
+        .node-element { position:absolute; border:1px solid transparent; box-sizing:border-box; display:flex; align-items:center; justify-content:center; cursor:move; user-select:none; }
+        .node-element.active { border:1px dashed #007acc; outline:1px solid #007acc; }
+        .prop-group { background:#2d2d2d; border:1px solid #3c3c3c; border-radius:4px; padding:10px; margin-bottom:10px; }
+        .category-title { font-size:11px; font-weight:bold; color:#888; text-transform:uppercase; margin-bottom:8px; }
+        .prop-row { display:flex; justify-content:space-between; align-items:center; margin-bottom:6px; font-size:12px; }
+        .prop-row span { width:90px; color:#aaa; }
+        .prop-input { flex:1; background:#1e1e1e; border:1px solid #3c3c3c; color:#fff; padding:4px; border-radius:2px; font-size:12px; }
+        .btn { background:#007acc; color:#fff; border:none; padding:6px 12px; border-radius:4px; cursor:pointer; font-size:12px; }
+        .btn:hover { background:#005999; }
+        .asset-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(60px, 1fr)); gap:5px; margin-top:5px; max-height:150px; overflow-y:auto; background:#1a1a1a; padding:5px; border-radius:4px; }
+    </style>
+</head>
+<body>
+    <div id="sidebar">
+        <div style="padding:15px;">
+            <div class="panel-title">Script Blocks Engine</div>
+            <div class="category-title" style="color:#d19a66;"><i class="fa-solid fa-bolt"></i> Events (addEventListener)</div>
+            <button class="block-btn" style="background:#d19a66; color:#000;"><i class="fa-solid fa-play"></i> Setup: initial loaded</button>
+            <button class="block-btn" style="background:#e5c07b; color:#000;"><i class="fa-solid fa-pointer"></i> On click event listener</button>
+            <div class="category-title" style="color:#c678dd; margin-top:15px;"><i class="fa-solid fa-eye"></i> Looks (.style & DOM attributes)</div>
+            <button class="block-btn" style="background:#c678dd; color:#fff;"><i class="fa-solid fa-palette"></i> Style background-color</button>
+            <button class="block-btn" style="background:#c678dd; color:#fff;"><i class="fa-solid fa-font"></i> Node innerText</button>
+            <div class="category-title" style="color:#e06c75; margin-top:15px;"><i class="fa-solid fa-music"></i> Audio (Fetch & Play)</div>
+            <button class="block-btn" style="background:#e06c75; color:#fff;"><i class="fa-solid fa-radio"></i> Fetch Audio Asset ID</button>
+            <div class="category-title" style="color:#d19a66; margin-top:15px;"><i class="fa-solid fa-gears"></i> Logic & Logs</div>
+            <button class="block-btn" style="background:#d19a66; color:#000;"><i class="fa-solid fa-code-branch"></i> Conditional logic: if (condition)</button>
+            <button class="block-btn" style="background:#d19a66; color:#000;"><i class="fa-solid fa-terminal"></i> console.log();</button>
+            <div class="category-title" style="color:#4db5ff; margin-top:15px;"><i class="fa-solid fa-window-maximize"></i> Navigation & Window</div>
+            <button class="block-btn" style="background:#4db5ff; color:#000;"><i class="fa-solid fa-link"></i> window.location.href</button>
+            <div class="category-title" style="color:#98c379; margin-top:15px;"><i class="fa-solid fa-calculator"></i> Variables & Calculations</div>
+            <button class="block-btn" style="background:#98c379; color:#000;"><i class="fa-solid fa-box"></i> Initialize const/let variable</button>
+            <div class="category-title" style="color:#ff6b6b; margin-top:15px;"><i class="fa-solid fa-cookie"></i> Cookie Storage</div>
+            <button class="block-btn" style="background:#ff6b6b; color:#fff;"><i class="fa-solid fa-cookie-bite"></i> document.cookie key-value</button>
+        </div>
+        <div style="margin-top:auto; padding:15px; border-top:1px solid #3c3c3c; display:flex; flex-direction:column; gap:5px;">
+            <button class="btn" style="background:#28a745;" onclick="saveChanges()"><i class="fa-solid fa-cloud-arrow-up"></i> Save Deployed Changes</button>
+            <button class="btn" style="background:#555;" onclick="window.location.href='/dashboard'"><i class="fa-solid fa-arrow-left"></i> Workspace Dashboard</button>
+        </div>
+    </div>
+    <div id="viewport-container">
+        <div style="position:absolute; top:15px; left:15px; z-index:10; display:flex; gap:5px;">
+            <button class="btn" onclick="addNewElement('Frame')"><i class="fa-solid fa-square"></i> + Frame</button>
+            <button class="btn" onclick="addNewElement('TextLabel')"><i class="fa-solid fa-font"></i> + TextLabel</button>
+            <button class="btn" onclick="addNewElement('ImageLabel')"><i class="fa-solid fa-image"></i> + ImageLabel</button>
+            <button class="btn" onclick="addNewElement('TextButton')"><i class="fa-solid fa-mouse-pointer"></i> + TextButton</button>
+        </div>
+        <div id="viewport"></div>
+    </div>
+    <div id="properties-panel">
+        <div class="panel-title">Asset Node Schema properties</div>
+        <div id="properties-content"></div>
+    </div>
+    <script>
+        const projectId = window.location.pathname.split('/').pop();
+        let items = [];
+        let activeIndex = null;
+        let systemAssets = [];
+        let isDragging = false;
+        let dragOffset = { x: 0, y: 0 };
+        
+        const IMAGE_OBJ = function(asset) {
+            return '<img src="/image/' + asset + '" class="asset-thumb" title="Asset ID: ' + asset + '" onclick="selectAssetForActiveNode(\'' + asset + '\')" style="width:55px; height:55px; object-fit:cover; border-radius:4px; margin:2px; border:1px solid #444; cursor:pointer;">';
+        };
+
+        function getCookie(name) {
+            let matches = document.cookie.match(new RegExp(
+                "(?:^|; )" + name.replace(/([\.$?*|{}\(\)\[\]\\\/\\+^])/g, '\\\\$1') + "=([^;]*)"
+            ));
+            return matches ? decodeURIComponent(matches[1]) : undefined;
+        }
+
+        function loadProjectData() {
+            fetch('/api/project/get/' + projectId)
+            .then(res => res.json())
+            .then(data => {
+                if(data.success) {
+                    items = data.data.items || [];
+                    renderViewport();
+                    renderPropertiesPanel();
+                }
+            });
+        }
+
+        function loadSystemAssets() {
+            fetch('/api/assets')
+            .then(res => res.json())
+            .then(data => {
+                if(data.success) {
+                    systemAssets = data.assets;
+                    renderPropertiesPanel();
+                }
+            });
+        }
+
+        function handleDirectUpload(input) {
+            if (!input.files || !input.files[0]) return;
+            const token = getCookie('roblox_token') || getCookie('token');
+            if (!token) {
+                alert("Authentication token session missing. Please log in again.");
+                input.value = '';
+                return;
+            }
+            const file = input.files[0];
+            const formData = new FormData();
+            formData.append('assetFile', file);
+            formData.append('robloxToken', token);
+            input.parentElement.innerText = "Uploading straight to Roblox Open Cloud...";
+            fetch('/api/upload-asset-file', {
+                method: 'POST',
+                body: formData
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success && data.assetId) {
+                    alert("Uploaded successfully! Asset ID: " + data.assetId);
+                    if (!systemAssets.includes(data.assetId)) {
+                        systemAssets.push(data.assetId);
+                    }
+                    renderPropertiesPanel();
+                } else {
+                    alert("Upload rejected: " + (data.error || "Failed to push raw asset binary to Roblox server."));
+                    loadSystemAssets();
+                }
+            })
+            .catch(err => {
+                console.error(err);
+                alert("Network configuration breakdown.");
+                loadSystemAssets();
+            });
+        }
+
+        function uploadAsset() {
+            const idVal = document.getElementById('uploadAssetId').value.trim();
+            if(!idVal) return;
+            fetch('/api/assets/add', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ assetId: idVal })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if(data.success) {
+                    document.getElementById('uploadAssetId').value = '';
+                    loadSystemAssets();
+                }
+            });
+        }
+
+        function selectAssetForActiveNode(asset) {
+            const input = document.getElementById('node_image_input') || document.getElementById('uploadAssetId');
+            if (input) input.value = asset;
+            if (activeIndex !== null && items[activeIndex].class === 'ImageLabel') {
+                items[activeIndex].image_id = asset;
+                renderViewport();
+                renderPropertiesPanel();
+            }
+        }
+
+        function addNewElement(className) {
+            items.push({
+                class: className,
+                left: "50",
+                top: "50",
+                width: className === 'ImageLabel' || className === 'Frame' ? "100" : "120",
+                height: className === 'ImageLabel' || className === 'Frame' ? "100" : "40",
+                background_color: className === 'TextLabel' ? "transparent" : "#ffffff",
+                text: className === 'TextLabel' || className === 'TextButton' ? "New " + className : "",
+                image_id: ""
+            });
+            activeIndex = items.length - 1;
+            renderViewport();
+            renderPropertiesPanel();
+        }
+
+        function deleteNode() {
+            if(activeIndex !== null) {
+                items.splice(activeIndex, 1);
+                activeIndex = null;
+                renderViewport();
+                renderPropertiesPanel();
+            }
+        }
+
+        function saveChanges() {
+            fetch('/api/project/save/' + projectId, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ items: items })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if(data.success) alert("Workspace configuration changes written successfully.");
+            });
+        }
+
+        function buildMetaHtml() {
+            return '<div class="prop-group"><div class="category-title">System Global parameters</div><div class="prop-row"><span>Project Route ID</span><input type="text" class="prop-input" value="' + projectId + '" readonly></div></div>';
+        }
+
+        function renderPropertiesPanel() {
+            let html = buildMetaHtml();
+            html += '<div class="prop-group">' +
+                '<div class="category-title" style="color:#28a745;"><i class="fa-solid fa-cloud-arrow-up"></i> Upload & Asset Library</div>' +
+                '<div style="display:flex; flex-direction:column; gap:8px;">' +
+                    '<div style="display:flex; gap:4px;">' +
+                        '<input type="text" id="uploadAssetId" placeholder="Roblox Asset ID..." class="prop-input" style="flex:1;">' +
+                        '<button class="btn" style="padding:4px 8px;" onclick="uploadAsset()">Add ID</button>' +
+                    '</div>' +
+                    '<div style="text-align:center; margin-top: 2px;">' +
+                        '<label class="btn" style="background:#007acc; width:calc(100% - 24px); cursor:pointer; display:block; padding:6px 0;">' +
+                            '<i class="fa-solid fa-file-image"></i> Direct Upload File to Roblox' +
+                            '<input type="file" id="directFileInput" accept="image/*" style="display:none;" onchange="handleDirectUpload(this)">' +
+                        '</label>' +
+                    '</div>' +
+                '</div>';
+            if (systemAssets.length > 0) {
+                html += '<div style="margin-top:10px;"><span style="font-size:11px;color:#aaa;">Click asset thumb to select ID:</span></div>';
+                html += '<div class="asset-grid">';
+                systemAssets.forEach(asset => {
+                    html += IMAGE_OBJ(asset);
+                });
+                html += '</div>';
+            } else {
+                html += '<p style="color:#666; font-size:11px; font-style:italic; margin:8px 0 0 0;">No raw textures available.</p>';
+            }
+            html += '</div>';
+            if(activeIndex !== null) {
+                const item = items[activeIndex];
+                html += '<div class="prop-group">' +
+                    '<div class="category-title">📐 Geometry Node coordinates</div>' +
+                    '<div class="prop-row"><span>Left (X)</span><input type="text" class="prop-input" value="' + item.left + '" oninput="items[' + activeIndex + '].left=this.value; renderViewport()"></div>' +
+                    '<div class="prop-row"><span>Top (Y)</span><input type="text" class="prop-input" value="' + item.top + '" oninput="items[' + activeIndex + '].top=this.value; renderViewport()"></div>' +
+                    '<div class="prop-row"><span>Width</span><input type="text" class="prop-input" value="' + item.width + '" oninput="items[' + activeIndex + '].width=this.value; renderViewport()"></div>' +
+                    '<div class="prop-row"><span>Height</span><input type="text" class="prop-input" value="' + item.height + '" oninput="items[' + activeIndex + '].height=this.value; renderViewport()"></div>' +
+                    '</div><div class="prop-group">' +
+                    '<div class="category-title">🎨 Aesthetics & Node Value</div>' +
+                    '<div class="prop-row"><span>Bg Color</span><input type="color" class="prop-input" value="' + (item.background_color || '#ffffff') + '" oninput="items[' + activeIndex + '].background_color=this.value; renderViewport()"></div>';
+                if(['TextLabel', 'TextButton', 'Input'].includes(item.class)) {
+                    html += '<div class="prop-row"><span>InnerText</span><input type="text" class="prop-input" value="' + (item.text || '') + '" oninput="items[' + activeIndex + '].text=this.value; renderViewport()"></div>';
+                }
+                if(item.class === 'ImageLabel') {
+                    html += '<div class="prop-row"><span>Image Asset ID</span><input type="text" id="node_image_input" class="prop-input" value="' + (item.image_id || '') + '" oninput="items[' + activeIndex + '].image_id=this.value; renderViewport(); renderPropertiesPanel()"></div>';
+                    if(item.image_id) {
+                        html += '<div style="text-align:center; margin-top:5px;"><img src="/image/' + item.image_id + '" style="width:60px; height:60px; object-fit:cover; border-radius:4px;"></div>';
+                    }
+                }
+                html += '</div><button class="btn" style="background:#dc3545; width:100%;" onclick="deleteNode()"><i class="fa-solid fa-trash"></i> Wipe Out Node</button>';
+            }
+            document.getElementById('properties-content').innerHTML = html;
+        }
+
+        function renderViewport() {
+            const vp = document.getElementById('viewport');
+            vp.innerHTML = '';
+            items.forEach((item, idx) => {
+                const el = document.createElement('div');
+                el.className = 'node-element' + (idx === activeIndex ? ' active' : '');
+                el.style.left = item.left + 'px';
+                el.style.top = item.top + 'px';
+                el.style.width = item.width + 'px';
+                el.style.height = item.height + 'px';
+                el.style.backgroundColor = item.background_color;
+                el.style.color = '#000';
+                el.style.fontSize = '12px';
+                if(item.class === 'ImageLabel' && item.image_id) {
+                    el.style.backgroundImage = 'url(/image/' + item.image_id + ')';
+                    el.style.backgroundSize = 'cover';
+                }
+                if(item.text) el.innerText = item.text;
+                el.onclick = (e) => {
+                    e.stopPropagation();
+                    activeIndex = idx;
+                    renderViewport();
+                    renderPropertiesPanel();
+                };
+                el.onmousedown = (e) => {
+                    if(idx !== activeIndex) return;
+                    isDragging = true;
+                    dragOffset.x = e.clientX - parseInt(el.style.left);
+                    dragOffset.y = e.clientY - parseInt(el.style.top);
+                    document.onmousemove = (ev) => {
+                        if(!isDragging) return;
+                        let newX = ev.clientX - dragOffset.x;
+                        let newY = ev.clientY - dragOffset.y;
+                        item.left = newX;
+                        item.top = newY;
+                        el.style.left = newX + 'px';
+                        el.style.top = newY + 'px';
+                        const inputs = document.querySelectorAll('.prop-input');
+                        if(inputs.length >= 5) {
+                            inputs[1].value = newX;
+                            inputs[2].value = newY;
+                        }
+                    };
+                    document.onmouseup = () => {
+                        isDragging = false;
+                        document.onmousemove = null;
+                        document.onmouseup = null;
+                    };
+                };
+                vp.appendChild(el);
+            });
+        }
+
+        document.getElementById('viewport').onclick = () => {
+            activeIndex = null;
+            renderViewport();
+            renderPropertiesPanel();
+        };
+
+        window.onload = () => {
+            loadProjectData();
+            loadSystemAssets();
+        };
+    </script>
+</body>
+</html>
