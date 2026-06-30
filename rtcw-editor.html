@@ -72,10 +72,6 @@
         let isDragging = false;
         let dragOffset = { x: 0, y: 0 };
         
-        const IMAGE_OBJ = function(asset) {
-            return '<img src="/image/' + asset + '" class="asset-thumb" title="Asset ID: ' + asset + '" onclick="selectAssetForActiveNode(\'' + asset + '\')" style="width:55px; height:55px; object-fit:cover; border-radius:4px; margin:2px; border:1px solid #444; cursor:pointer;">';
-        };
-
         function getCookie(name) {
             let matches = document.cookie.match(new RegExp(
                 "(?:^|; )" + name.replace(/([\.$?*|{}\(\)\[\]\\\/\\+^])/g, '\\\\$1') + "=([^;]*)"
@@ -96,13 +92,22 @@
         }
 
         function loadSystemAssets() {
-            fetch('/api/assets')
+            const session = getCookie('user_session');
+            if (!session) {
+                renderPropertiesPanel();
+                return;
+            }
+            fetch('/api/roblox/assets?session=' + session)
             .then(res => res.json())
             .then(data => {
                 if(data.success) {
                     systemAssets = data.assets;
                     renderPropertiesPanel();
                 }
+            })
+            .catch(err => {
+                console.error(err);
+                renderPropertiesPanel();
             });
         }
 
@@ -118,28 +123,29 @@
             const formData = new FormData();
             formData.append('assetFile', file);
             formData.append('robloxToken', token);
-            input.parentElement.innerText = "Uploading straight to Roblox Open Cloud...";
+            
+            const labelContainer = input.parentElement;
+            const originalContent = labelContainer.innerHTML;
+            labelContainer.innerText = "Uploading straight to Roblox Open Cloud...";
+            
             fetch('/api/upload-asset-file', {
                 method: 'POST',
                 body: formData
             })
             .then(res => res.json())
             .then(data => {
+                labelContainer.innerHTML = originalContent;
                 if (data.success && data.assetId) {
                     alert("Uploaded successfully! Asset ID: " + data.assetId);
-                    if (!systemAssets.includes(data.assetId)) {
-                        systemAssets.push(data.assetId);
-                    }
-                    renderPropertiesPanel();
+                    loadSystemAssets();
                 } else {
                     alert("Upload rejected: " + (data.error || "Failed to push raw asset binary to Roblox server."));
-                    loadSystemAssets();
                 }
             })
             .catch(err => {
+                labelContainer.innerHTML = originalContent;
                 console.error(err);
                 alert("Network configuration breakdown.");
-                loadSystemAssets();
             });
         }
 
@@ -161,12 +167,11 @@
         }
 
         function selectAssetForActiveNode(asset) {
-            const input = document.getElementById('node_image_input') || document.getElementById('uploadAssetId');
+            const input = document.getElementById('node_image_input');
             if (input) input.value = asset;
             if (activeIndex !== null && items[activeIndex].class === 'ImageLabel') {
                 items[activeIndex].image_id = asset;
                 renderViewport();
-                renderPropertiesPanel();
             }
         }
 
@@ -207,12 +212,9 @@
             });
         }
 
-        function buildMetaHtml() {
-            return '<div class="prop-group"><div class="category-title">System Global parameters</div><div class="prop-row"><span>Project Route ID</span><input type="text" class="prop-input" value="' + projectId + '" readonly></div></div>';
-        }
-
         function renderPropertiesPanel() {
-            let html = buildMetaHtml();
+            let html = '<div class="prop-group"><div class="category-title">System Global parameters</div><div class="prop-row"><span>Project Route ID</span><input type="text" class="prop-input" value="' + projectId + '" readonly></div></div>';
+            
             html += '<div class="prop-group">' +
                 '<div class="category-title" style="color:#28a745;"><i class="fa-solid fa-cloud-arrow-up"></i> Upload & Asset Library</div>' +
                 '<div style="display:flex; flex-direction:column; gap:8px;">' +
@@ -227,17 +229,19 @@
                         '</label>' +
                     '</div>' +
                 '</div>';
+
             if (systemAssets.length > 0) {
                 html += '<div style="margin-top:10px;"><span style="font-size:11px;color:#aaa;">Click asset thumb to select ID:</span></div>';
                 html += '<div class="asset-grid">';
                 systemAssets.forEach(asset => {
-                    html += IMAGE_OBJ(asset);
+                    html += '<img src="/image/' + asset + '" class="asset-thumb" title="Asset ID: ' + asset + '" onclick="selectAssetForActiveNode(\'' + asset + '\')" style="width:55px; height:55px; object-fit:cover; border-radius:4px; margin:2px; border:1px solid #444; cursor:pointer;">';
                 });
                 html += '</div>';
             } else {
                 html += '<p style="color:#666; font-size:11px; font-style:italic; margin:8px 0 0 0;">No raw textures available.</p>';
             }
             html += '</div>';
+
             if(activeIndex !== null) {
                 const item = items[activeIndex];
                 html += '<div class="prop-group">' +
@@ -249,11 +253,12 @@
                     '</div><div class="prop-group">' +
                     '<div class="category-title">🎨 Aesthetics & Node Value</div>' +
                     '<div class="prop-row"><span>Bg Color</span><input type="color" class="prop-input" value="' + (item.background_color || '#ffffff') + '" oninput="items[' + activeIndex + '].background_color=this.value; renderViewport()"></div>';
+                
                 if(['TextLabel', 'TextButton', 'Input'].includes(item.class)) {
                     html += '<div class="prop-row"><span>InnerText</span><input type="text" class="prop-input" value="' + (item.text || '') + '" oninput="items[' + activeIndex + '].text=this.value; renderViewport()"></div>';
                 }
                 if(item.class === 'ImageLabel') {
-                    html += '<div class="prop-row"><span>Image Asset ID</span><input type="text" id="node_image_input" class="prop-input" value="' + (item.image_id || '') + '" oninput="items[' + activeIndex + '].image_id=this.value; renderViewport(); renderPropertiesPanel()"></div>';
+                    html += '<div class="prop-row"><span>Image Asset ID</span><input type="text" id="node_image_input" class="prop-input" value="' + (item.image_id || '') + '" oninput="items[' + activeIndex + '].image_id=this.value; renderViewport();"></div>';
                     if(item.image_id) {
                         html += '<div style="text-align:center; margin-top:5px;"><img src="/image/' + item.image_id + '" style="width:60px; height:60px; object-fit:cover; border-radius:4px;"></div>';
                     }
