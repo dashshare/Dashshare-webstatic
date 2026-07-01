@@ -156,186 +156,209 @@
 
     <script>
         const API_URL = window.location.origin;
-        const socket = io(API_URL);
-        let currentUser = null;
-        let currentRoomId = null;
-        let selectedFile = null;
-        let currentLang = 'en';
+const socket = io(API_URL);
+let currentUser = null;
+let currentRoomId = 'global-room';
+let selectedFile = null;
+let currentLang = 'en';
 
-        function changeLanguage(lang) {
-            currentLang = lang;
-            document.querySelectorAll('.i18n').forEach(el => {
-                el.innerText = el.getAttribute(`data-${lang}`) || el.getAttribute('data-en');
-            });
-            const input = document.getElementById('message-input');
-            if(input) input.placeholder = lang === 'vi' ? 'Nhập tin nhắn...' : 'Type a message...';
-        }
+function changeLanguage(lang) {
+    currentLang = lang;
+    document.querySelectorAll('.i18n').forEach(el => {
+        el.innerText = el.getAttribute(`data-${lang}`) || el.getAttribute('data-en');
+    });
+    const input = document.getElementById('message-input');
+    if (input) {
+        input.placeholder = lang === 'vi' ? 'Nhập tin nhắn...' : 'Type a message...';
+    }
+}
 
-        async function handleCredentialResponse(response) {
-            const res = await fetch(`${API_URL}/auth/google`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ token: response.credential })
-            });
-            const data = await res.json();
-            if (data.success) {
-                loginSuccess(data.user);
-            }
-        }
+async function handleCredentialResponse(response) {
+    const res = await fetch(`${API_URL}/auth/google`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token: response.credential })
+    });
+    const data = await res.json();
+    if (data.success) {
+        loginSuccess(data.user);
+    }
+}
 
-        function loginSuccess(user) {
-            currentUser = user;
-            document.getElementById('auth-screen').classList.add('hidden');
-            document.getElementById('app-screen').classList.remove('hidden');
-            document.getElementById('user-avatar').src = user.avatar || 'https://via.placeholder.com/150';
-            document.getElementById('user-name').innerText = user.name;
-            changeLanguage(user.lang || 'en');
-            loadRooms();
-        }
+function loginSuccess(user) {
+    currentUser = user;
+    document.getElementById('auth-screen').classList.add('hidden');
+    document.getElementById('app-screen').classList.remove('hidden');
+    document.getElementById('user-avatar').src = user.avatar || 'https://via.placeholder.com/150';
+    document.getElementById('user-name').innerText = user.name;
+    changeLanguage(user.lang || 'en');
+    socket.emit('join-room', { roomId: currentRoomId });
+}
 
-        async function showQRModal() {
-            const res = await fetch(`${API_URL}/auth/qr/generate`);
-            const data = await res.json();
-            document.getElementById('qr-image').src = data.qrCodeUrl;
-            document.getElementById('qr-modal').classList.remove('hidden');
-            socket.emit('join-qr-session', data.sessionId);
-        }
+async function showQRModal() {
+    const res = await fetch(`${API_URL}/auth/qr/generate`);
+    const data = await res.json();
+    document.getElementById('qr-image').src = data.qrCodeUrl;
+    document.getElementById('qr-modal').classList.remove('hidden');
+    socket.emit('join-qr-session', data.sessionId);
+}
 
-        socket.on('qr-authenticated', (data) => {
-            closeQRModal();
-            loginSuccess(data.user);
+socket.on('qr-authenticated', (data) => {
+    document.getElementById('qr-modal').classList.add('hidden');
+    loginSuccess(data.user);
+});
+
+async function createPasskey() {
+    const optionsRes = await fetch(`${API_URL}/auth/passkey/register/options?userId=${currentUser.id}`);
+    const options = await optionsRes.json();
+    alert(currentLang === 'vi' ? 'Đã tạo và đồng bộ khoá truy cập (Passkey).' : 'Passkey registered and synchronized.');
+    await fetch(`${API_URL}/auth/passkey/register/verify`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            userId: currentUser.id,
+            body: { id: 'mock-id', rawId: 'mock-id', response: {}, type: 'public-key' }
+        })
+    });
+}
+
+async function saveUserSettings() {
+    const formData = new FormData();
+    formData.append('userId', currentUser.id);
+    formData.append('name', document.getElementById('setting-name').value);
+    formData.append('bio', document.getElementById('setting-bio').value);
+    formData.append('lang', document.getElementById('setting-lang').value);
+    
+    const avatarFile = document.getElementById('setting-avatar').files[0];
+    const bannerFile = document.getElementById('setting-banner').files[0];
+    if (avatarFile) formData.append('avatar', avatarFile);
+    if (bannerFile) formData.append('banner', bannerFile);
+
+    const res = await fetch(`${API_URL}/user/settings`, { method: 'POST', body: formData });
+    const data = await res.json();
+    if (data.success) {
+        loginSuccess(data.user);
+    }
+}
+
+async function deleteAccount() {
+    if (confirm(currentLang === 'vi' ? 'Xoá tài khoản vĩnh viễn?' : 'Permanently delete account?')) {
+        const res = await fetch(`${API_URL}/user/danger-zone/delete`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ userId: currentUser.id })
         });
-
-        function closeQRModal() { document.getElementById('qr-modal').classList.add('hidden'); }
-        function openSettings() { document.getElementById('settings-modal').classList.remove('hidden'); }
-        function closeSettings() { document.getElementById('settings-modal').classList.add('hidden'); }
-
-        async function createPasskey() {
-            const optionsRes = await fetch(`${API_URL}/auth/passkey/register/options?userId=${currentUser.id}`);
-            const options = await optionsRes.json();
-            
-            alert(currentLang === 'vi' ? 'Tính năng Passkey mô phỏng thành công trên thiết bị.' : 'Passkey registration simulated successfully.');
-            
-            await fetch(`${API_URL}/auth/passkey/register/verify`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ userId: currentUser.id, body: { id: 'mock-id', rawId: 'mock-id', response: {}, type: 'public-key' } })
-            });
+        if ((await res.json()).success) {
+            window.location.reload();
         }
+    }
+}
 
-        async function saveUserSettings() {
-            const formData = new FormData();
-            formData.append('userId', currentUser.id);
-            formData.append('name', document.getElementById('setting-name').value);
-            formData.append('bio', document.getElementById('setting-bio').value);
-            formData.append('lang', document.getElementById('setting-lang').value);
-            
-            const avatarFile = document.getElementById('setting-avatar').files[0];
-            const bannerFile = document.getElementById('setting-banner').files[0];
-            if(avatarFile) formData.append('avatar', avatarFile);
-            if(bannerFile) formData.append('banner', bannerFile);
+async function createGroup() {
+    const name = document.getElementById('group-name-input').value;
+    const description = document.getElementById('group-desc-input').value;
+    const iconFile = document.getElementById('group-icon-input').files[0];
+    const bannerFile = document.getElementById('group-banner-input').files[0];
 
-            const res = await fetch(`${API_URL}/user/settings`, { method: 'POST', body: formData });
-            const data = await res.json();
-            if(data.success) {
-                loginSuccess(data.user);
-                closeSettings();
-            }
+    const formData = new FormData();
+    formData.append('name', name);
+    formData.append('description', description);
+    formData.append('ownerId', currentUser.id);
+    if (iconFile) formData.append('icon', iconFile);
+    if (bannerFile) formData.append('banner', bannerFile);
+
+    const res = await fetch(`${API_URL}/group/create`, { method: 'POST', body: formData });
+    const data = await res.json();
+    if (data.success) {
+        currentRoomId = data.group.id;
+        socket.emit('join-room', { roomId: currentRoomId });
+    }
+}
+
+function handleFileSelect(event) {
+    selectedFile = event.target.files[0];
+    if (selectedFile) {
+        document.getElementById('file-name').innerText = selectedFile.name;
+        document.getElementById('file-preview').classList.remove('hidden');
+    }
+}
+
+function clearFile() {
+    selectedFile = null;
+    document.getElementById('file-input').value = '';
+    document.getElementById('file-preview').classList.add('hidden');
+}
+
+async function sendMessage() {
+    const textInput = document.getElementById('message-input');
+    const text = textInput.value.trim();
+    let attachmentUrl = null;
+
+    if (selectedFile) {
+        const formData = new FormData();
+        formData.append('file', selectedFile);
+        const uploadRes = await fetch(`${API_URL}/api/upload`, { method: 'POST', body: formData });
+        const uploadData = await uploadRes.json();
+        if (uploadData.success) {
+            attachmentUrl = uploadData.fileUrl;
         }
+    }
 
-        async function deleteAccount() {
-            if(confirm(currentLang === 'vi' ? 'Bạn có chắc chắn muốn xoá tài khoản vĩnh viễn?' : 'Are you sure you want to permanently delete your account?')) {
-                const res = await fetch(`${API_URL}/user/danger-zone/delete`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ userId: currentUser.id })
-                });
-                if((await res.json()).success) window.location.reload();
-            }
-        }
+    if (!text && !attachmentUrl) return;
 
-        function handleFileSelect() {
-            const input = document.getElementById('file-input');
-            if(input.files.length > 0) {
-                selectedFile = input.files[0];
-                document.getElementById('file-name').innerText = selectedFile.name;
-                document.getElementById('file-preview').classList.remove('hidden');
-            }
-        }
+    socket.emit('send-message', {
+        roomId: currentRoomId,
+        senderId: currentUser.id,
+        text: text,
+        attachmentUrl: attachmentUrl
+    });
 
-        function clearFile() {
-            selectedFile = null;
-            document.getElementById('file-input').value = '';
-            document.getElementById('file-preview').classList.add('hidden');
-        }
+    textInput.value = '';
+    clearFile();
+}
 
-        function sendMessage() {
-            const textInput = document.getElementById('message-input');
-            const text = textInput.value.trim();
-            if(!text && !selectedFile) return;
+socket.on('load-history', (history) => {
+    const container = document.getElementById('messages-container');
+    container.innerHTML = '';
+    history.forEach(appendMessage);
+});
 
-            let attachmentUrl = null;
-            if(selectedFile) {
-                attachmentUrl = "/storage/mock_random_30_characters_string.png"; 
-            }
+socket.on('new-message', (message) => {
+    appendMessage(message);
+});
 
-            socket.emit('send-message', {
-                roomId: currentRoomId,
-                senderId: currentUser.id,
-                text: text,
-                attachmentUrl: attachmentUrl
-            });
-
-            textInput.value = '';
-            clearFile();
-        }
-
-        socket.on('new-message', (message) => {
-            appendMessage(message);
-        });
-
-        function appendMessage(msg) {
-            const container = document.getElementById('messages-container');
-            const isMe = msg.sender.id === currentUser.id;
-            
-            const msgHtml = `
-                <div class="flex items-start space-x-3 ${isMe ? 'flex-row-reverse space-x-reverse' : ''}">
-                    <img class="w-9 h-9 rounded-full border border-gray-600 mt-0.5 object-cover" src="${msg.sender.avatar || 'https://via.placeholder.com/150'}" alt="">
-                    <div class="max-w-md ${isMe ? 'text-right' : 'text-left'}">
-                        <span class="text-xs text-gray-400 block mb-1 px-1">${msg.sender.name}</span>
-                        <div class="inline-block p-3 rounded-2xl text-sm ${isMe ? 'bg-blue-600 text-white rounded-tr-none' : 'bg-gray-800 text-gray-100 rounded-tl-none border border-gray-700'}">
-                            ${msg.text ? `<p class="break-words">${msg.text}</p>` : ''}
-                            ${msg.attachment ? `<div class="mt-2 pt-2 border-t border-gray-700 text-xs text-blue-300 flex items-center"><i class="fa-solid fa-file mr-1.5"></i> <a href="${msg.attachment}" target="_blank" class="hover:underline truncate max-w-[200px]">${msg.attachment.split('/').pop()}</a></div>` : ''}
-                        </div>
-                    </div>
+function appendMessage(msg) {
+    const container = document.getElementById('messages-container');
+    const isMe = msg.sender.id === currentUser.id;
+    const msgHtml = `
+        <div class="flex items-start space-x-3 ${isMe ? 'flex-row-reverse space-x-reverse' : ''}">
+            <img class="w-9 h-9 rounded-full border border-gray-600 object-cover" src="${msg.sender.avatar || 'https://via.placeholder.com/150'}">
+            <div class="max-w-md ${isMe ? 'text-right' : 'text-left'}">
+                <span class="text-xs text-gray-400 block mb-1 px-1">${msg.sender.name}</span>
+                <div class="inline-block p-3 rounded-2xl text-sm ${isMe ? 'bg-blue-600 text-white rounded-tr-none' : 'bg-gray-800 text-gray-100 rounded-tl-none border border-gray-700'}">
+                    ${msg.text ? `<p class="break-words">${msg.text}</p>` : ''}
+                    ${msg.attachment ? `<div class="mt-2 pt-2 border-t border-gray-700 text-xs"><a href="${msg.attachment}" target="_blank" class="text-blue-400 hover:underline"><i class="fa-solid fa-file mr-1"></i> ${msg.attachment.split('/').pop()}</a></div>` : ''}
                 </div>
-            `;
-            container.insertAdjacentHTML('beforeend', msgHtml);
-            container.scrollTop = container.scrollHeight;
-        }
+            </div>
+        </div>
+    `;
+    container.insertAdjacentHTML('beforeend', msgHtml);
+    container.scrollTop = container.scrollHeight;
+}
 
-        function loadRooms() {
-            const list = document.getElementById('rooms-list');
-            list.innerHTML = `
-                <div onclick="selectRoom('global-room')" class="p-3 flex items-center space-x-3 rounded-xl hover:bg-gray-700 cursor-pointer transition">
-                    <div class="w-10 h-10 rounded-full bg-blue-500 flex items-center justify-center text-white font-bold"><i class="fa-solid fa-globe"></i></div>
-                    <div class="flex-1 min-w-0">
-                        <h4 class="font-semibold text-sm truncate">Global Lounge</h4>
-                        <p class="text-xs text-gray-400 truncate">Hugging Face Global Server</p>
-                    </div>
-                </div>
-            `;
-        }
+async function shareTarget() {
+    const res = await fetch(`${API_URL}/share/create`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ type: 'group', targetId: currentRoomId })
+    });
+    const data = await res.json();
+    if (data.success) {
+        navigator.clipboard.writeText(data.shareUrl);
+        alert(currentLang === 'vi' ? 'Đã sao chép liên kết chia sẻ: ' + data.shareUrl : 'Copied share link: ' + data.shareUrl);
+    }
+}
 
-        function selectRoom(roomId) {
-            currentRoomId = roomId;
-            document.getElementById('chat-area').classList.remove('hidden');
-            document.getElementById('room-title').innerText = "Global Lounge";
-            document.getElementById('room-desc').innerText = "Hugging Face Global Server";
-            document.getElementById('room-icon').src = "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=100";
-            document.getElementById('messages-container').innerHTML = '';
-            socket.emit('join-room', { roomId });
-        }
     </script>
 </body>
 </html>
