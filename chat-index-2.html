@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RT-CatWeb Message</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+</head>
+<body class="bg-gray-900 text-gray-100 font-sans h-screen flex flex-col">
+
+    <div id="auth-screen" class="flex-1 flex flex-col items-center justify-center p-4">
+        <div class="bg-gray-800 p-8 rounded-2xl shadow-xl w-full max-w-md text-center border border-gray-700">
+            <h1 class="text-3xl font-bold mb-6 text-blue-400"><i class="fa-solid fa-comments"></i> RT-CatWeb</h1>
+            
+            <div id="g_id_onload"
+                 data-client_id="525976185966-p4vl6nuge2c3kiqj4r3q8gc12oc236l0.apps.googleusercontent.com"
+                 data-callback="handleCredentialResponse">
+            </div>
+            <div class="g_id_signin mb-6 flex justify-center" data-type="standard"></div>
+
+            <div class="relative flex py-2 items-center my-4">
+                <div class="flex-grow border-t border-gray-600"></div>
+                <span class="flex-shrink mx-4 text-gray-400 text-sm i18n" data-en="OR" data-vi="HOẶC">OR</span>
+                <div class="flex-grow border-t border-gray-600"></div>
+            </div>
+
+            <button onclick="loginWithPasskey()" class="w-full bg-green-600 hover:bg-green-700 text-white font-medium py-2.5 px-4 rounded-lg transition mb-4">
+                <i class="fa-solid fa-key mr-2"></i> <span class="i18n" data-en="Login with Passkey" data-vi="Đăng nhập bằng Passkey">Login with Passkey</span>
+            </button>
+
+            <button onclick="showQRModal()" class="w-full bg-purple-600 hover:bg-purple-700 text-white font-medium py-2.5 px-4 rounded-lg transition">
+                <i class="fa-solid fa-qrcode mr-2"></i> <span class="i18n" data-en="Login via QR Code" data-vi="Đăng nhập bằng mã QR">Login via QR Code</span>
+            </button>
+        </div>
+    </div>
+
+    <div id="app-screen" class="hidden flex-1 flex h-screen overflow-hidden">
+        <div class="w-80 bg-gray-800 border-r border-gray-700 flex flex-col">
+            <div class="p-4 border-b border-gray-700 flex items-center justify-between">
+                <div class="flex items-center space-x-3">
+                    <img id="user-avatar" class="w-10 h-10 rounded-full border border-gray-600" src="" alt="Avatar">
+                    <div>
+                        <h2 id="user-name" class="font-semibold text-sm truncate w-36"></h2>
+                        <span class="text-xs text-green-400">Online</span>
+                    </div>
+                </div>
+                <button onclick="openSettings()" class="text-gray-400 hover:text-white p-2">
+                    <i class="fa-solid fa-gear text-lg"></i>
+                </button>
+            </div>
+
+            <div class="p-3">
+                <button onclick="openCreateGroupModal()" class="w-full bg-blue-600 hover:bg-blue-700 py-2 rounded-lg text-sm font-medium transition">
+                    <i class="fa-solid fa-plus mr-1"></i> <span class="i18n" data-en="New Group" data-vi="Tạo Nhóm Mới">New Group</span>
+                </button>
+            </div>
+
+            <div id="rooms-list" class="flex-1 overflow-y-auto p-2 space-y-1"></div>
+        </div>
+
+        <div id="chat-area" class="flex-1 flex flex-col bg-gray-900 hidden">
+            <div id="chat-header" class="h-16 border-b border-gray-700 px-6 flex items-center justify-between bg-gray-800 bg-cover bg-center relative">
+                <div class="absolute inset-0 bg-black bg-opacity-40 z-0"></div>
+                <div class="flex items-center space-x-3 z-10">
+                    <img id="room-icon" class="w-10 h-10 rounded-full object-cover" src="" alt="Room Icon">
+                    <div>
+                        <h3 id="room-title" class="font-bold"></h3>
+                        <p id="room-desc" class="text-xs text-gray-400 truncate w-64"></p>
+                    </div>
+                </div>
+                <div class="flex space-x-2 z-10">
+                    <button onclick="shareTarget()" class="text-gray-400 hover:text-white p-2"><i class="fa-solid fa-share-nodes"></i></button>
+                    <button id="group-setting-btn" onclick="openGroupSettings()" class="text-gray-400 hover:text-white p-2 hidden"><i class="fa-solid fa-sliders"></i></button>
+                </div>
+            </div>
+
+            <div id="messages-container" class="flex-1 overflow-y-auto p-6 space-y-4"></div>
+
+            <div class="p-4 bg-gray-800 border-t border-gray-700 flex items-center space-x-3">
+                <label class="cursor-pointer text-gray-400 hover:text-white p-2 bg-gray-700 rounded-full transition">
+                    <i class="fa-solid fa-paperclip"></i>
+                    <input type="file" id="file-input" class="hidden" onchange="handleFileSelect()">
+                </label>
+                <div id="file-preview" class="hidden bg-gray-700 px-3 py-1.5 rounded-lg text-xs flex items-center space-x-2">
+                    <span id="file-name" class="truncate max-w-[150px]"></span>
+                    <button onclick="clearFile()" class="text-red-400 hover:text-red-300"><i class="fa-solid fa-xmark"></i></button>
+                </div>
+                <input type="text" id="message-input" class="flex-1 bg-gray-700 border-none rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 text-white" placeholder="Type a message...">
+                <button onclick="sendMessage()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition"><i class="fa-solid fa-paper-plane"></i></button>
+            </div>
+        </div>
+    </div>
+
+    <div id="qr-modal" class="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center hidden z-50">
+        <div class="bg-gray-800 p-6 rounded-xl border border-gray-700 max-w-sm w-full text-center">
+            <h3 class="text-xl font-bold mb-4 i18n" data-en="Scan QR to Login" data-vi="Quét mã QR để đăng nhập">Scan QR to Login</h3>
+            <div class="flex justify-center mb-4"><img id="qr-image" class="bg-white p-2 rounded-lg" src="" alt="QR"></div>
+            <button onclick="closeQRModal()" class="mt-2 text-sm text-gray-400 hover:text-white i18n" data-en="Close" data-vi="Đóng">Close</button>
+        </div>
+    </div>
+
+    <div id="settings-modal" class="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center hidden z-50">
+        <div class="bg-gray-800 p-6 rounded-xl border border-gray-700 max-w-md w-full max-h-[85vh] overflow-y-auto">
+            <h3 class="text-xl font-bold mb-4 i18n" data-en="Account Settings" data-vi="Cài đặt tài khoản">Account Settings</h3>
+            
+            <div class="space-y-4 text-sm">
+                <div>
+                    <label class="block text-xs text-gray-400 mb-1 i18n" data-en="Language" data-vi="Ngôn ngữ">Language</label>
+                    <select id="setting-lang" onchange="changeLanguage(this.value)" class="w-full bg-gray-700 rounded p-2 border border-gray-600">
+                        <option value="en">English</option>
+                        <option value="vi">Tiếng Việt</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs text-gray-400 mb-1 i18n" data-en="Display Name" data-vi="Tên hiển thị">Display Name</label>
+                    <input type="text" id="setting-name" class="w-full bg-gray-700 rounded p-2 border border-gray-600">
+                </div>
+                <div>
+                    <label class="block text-xs text-gray-400 mb-1">Bio</label>
+                    <textarea id="setting-bio" class="w-full bg-gray-700 rounded p-2 border border-gray-600 h-16"></textarea>
+                </div>
+                <div>
+                    <label class="block text-xs text-gray-400 mb-1">Avatar</label>
+                    <input type="file" id="setting-avatar" class="w-full text-xs text-gray-400">
+                </div>
+                <div>
+                    <label class="block text-xs text-gray-400 mb-1">Banner</label>
+                    <input type="file" id="setting-banner" class="w-full text-xs text-gray-400">
+                </div>
+                
+                <div class="border-t border-gray-700 pt-4">
+                    <h4 class="font-semibold text-sm mb-2 text-green-400"><i class="fa-solid fa-shield-halved mr-1"></i> Passkeys</h4>
+                    <button onclick="createPasskey()" class="bg-gray-700 hover:bg-gray-600 px-3 py-1.5 rounded text-xs transition">
+                        <i class="fa-solid fa-plus mr-1"></i> <span class="i18n" data-en="Create Passkey" data-vi="Tạo khoá truy cập">Create Passkey</span>
+                    </button>
+                </div>
+
+                <div class="border-t border-gray-700 pt-4 bg-red-950 bg-opacity-20 p-3 rounded-lg border border-red-900">
+                    <h4 class="font-semibold text-sm mb-1 text-red-400"><i class="fa-solid fa-triangle-exclamation mr-1"></i> Danger Zone</h4>
+                    <p class="text-xs text-red-300 mb-2 i18n" data-en="This action will permanently delete your account data." data-vi="Hành động này sẽ xóa vĩnh viễn toàn bộ dữ liệu tài khoản của bạn.">This action will permanently delete your account data.</p>
+                    <button onclick="deleteAccount()" class="bg-red-600 hover:bg-red-700 text-white font-medium px-3 py-1.5 rounded text-xs transition">
+                        <i class="fa-solid fa-trash mr-1"></i> <span class="i18n" data-en="Delete Account" data-vi="Xoá tài khoản">Delete Account</span>
+                    </button>
+                </div>
+            </div>
+            
+            <div class="mt-6 flex justify-end space-x-2">
+                <button onclick="closeSettings()" class="bg-gray-700 hover:bg-gray-600 px-4 py-2 rounded text-sm i18n" data-en="Cancel" data-vi="Hủy">Cancel</button>
+                <button onclick="saveUserSettings()" class="bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded text-sm font-medium i18n" data-en="Save Changes" data-vi="Lưu thay đổi">Save Changes</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = window.location.origin;
+        const socket = io(API_URL);
+        let currentUser = null;
+        let currentRoomId = null;
+        let selectedFile = null;
+        let currentLang = 'en';
+
+        function changeLanguage(lang) {
+            currentLang = lang;
+            document.querySelectorAll('.i18n').forEach(el => {
+                el.innerText = el.getAttribute(`data-${lang}`) || el.getAttribute('data-en');
+            });
+            const input = document.getElementById('message-input');
+            if(input) input.placeholder = lang === 'vi' ? 'Nhập tin nhắn...' : 'Type a message...';
+        }
+
+        async function handleCredentialResponse(response) {
+            const res = await fetch(`${API_URL}/auth/google`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ token: response.credential })
+            });
+            const data = await res.json();
+            if (data.success) {
+                loginSuccess(data.user);
+            }
+        }
+
+        function loginSuccess(user) {
+            currentUser = user;
+            document.getElementById('auth-screen').classList.add('hidden');
+            document.getElementById('app-screen').classList.remove('hidden');
+            document.getElementById('user-avatar').src = user.avatar || 'https://via.placeholder.com/150';
+            document.getElementById('user-name').innerText = user.name;
+            changeLanguage(user.lang || 'en');
+            loadRooms();
+        }
+
+        async function showQRModal() {
+            const res = await fetch(`${API_URL}/auth/qr/generate`);
+            const data = await res.json();
+            document.getElementById('qr-image').src = data.qrCodeUrl;
+            document.getElementById('qr-modal').classList.remove('hidden');
+            socket.emit('join-qr-session', data.sessionId);
+        }
+
+        socket.on('qr-authenticated', (data) => {
+            closeQRModal();
+            loginSuccess(data.user);
+        });
+
+        function closeQRModal() { document.getElementById('qr-modal').classList.add('hidden'); }
+        function openSettings() { document.getElementById('settings-modal').classList.remove('hidden'); }
+        function closeSettings() { document.getElementById('settings-modal').classList.add('hidden'); }
+
+        async function createPasskey() {
+            const optionsRes = await fetch(`${API_URL}/auth/passkey/register/options?userId=${currentUser.id}`);
+            const options = await optionsRes.json();
+            
+            alert(currentLang === 'vi' ? 'Tính năng Passkey mô phỏng thành công trên thiết bị.' : 'Passkey registration simulated successfully.');
+            
+            await fetch(`${API_URL}/auth/passkey/register/verify`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ userId: currentUser.id, body: { id: 'mock-id', rawId: 'mock-id', response: {}, type: 'public-key' } })
+            });
+        }
+
+        async function saveUserSettings() {
+            const formData = new FormData();
+            formData.append('userId', currentUser.id);
+            formData.append('name', document.getElementById('setting-name').value);
+            formData.append('bio', document.getElementById('setting-bio').value);
+            formData.append('lang', document.getElementById('setting-lang').value);
+            
+            const avatarFile = document.getElementById('setting-avatar').files[0];
+            const bannerFile = document.getElementById('setting-banner').files[0];
+            if(avatarFile) formData.append('avatar', avatarFile);
+            if(bannerFile) formData.append('banner', bannerFile);
+
+            const res = await fetch(`${API_URL}/user/settings`, { method: 'POST', body: formData });
+            const data = await res.json();
+            if(data.success) {
+                loginSuccess(data.user);
+                closeSettings();
+            }
+        }
+
+        async function deleteAccount() {
+            if(confirm(currentLang === 'vi' ? 'Bạn có chắc chắn muốn xoá tài khoản vĩnh viễn?' : 'Are you sure you want to permanently delete your account?')) {
+                const res = await fetch(`${API_URL}/user/danger-zone/delete`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ userId: currentUser.id })
+                });
+                if((await res.json()).success) window.location.reload();
+            }
+        }
+
+        function handleFileSelect() {
+            const input = document.getElementById('file-input');
+            if(input.files.length > 0) {
+                selectedFile = input.files[0];
+                document.getElementById('file-name').innerText = selectedFile.name;
+                document.getElementById('file-preview').classList.remove('hidden');
+            }
+        }
+
+        function clearFile() {
+            selectedFile = null;
+            document.getElementById('file-input').value = '';
+            document.getElementById('file-preview').classList.add('hidden');
+        }
+
+        function sendMessage() {
+            const textInput = document.getElementById('message-input');
+            const text = textInput.value.trim();
+            if(!text && !selectedFile) return;
+
+            let attachmentUrl = null;
+            if(selectedFile) {
+                attachmentUrl = "/storage/mock_random_30_characters_string.png"; 
+            }
+
+            socket.emit('send-message', {
+                roomId: currentRoomId,
+                senderId: currentUser.id,
+                text: text,
+                attachmentUrl: attachmentUrl
+            });
+
+            textInput.value = '';
+            clearFile();
+        }
+
+        socket.on('new-message', (message) => {
+            appendMessage(message);
+        });
+
+        function appendMessage(msg) {
+            const container = document.getElementById('messages-container');
+            const isMe = msg.sender.id === currentUser.id;
+            
+            const msgHtml = `
+                <div class="flex items-start space-x-3 ${isMe ? 'flex-row-reverse space-x-reverse' : ''}">
+                    <img class="w-9 h-9 rounded-full border border-gray-600 mt-0.5 object-cover" src="${msg.sender.avatar || 'https://via.placeholder.com/150'}" alt="">
+                    <div class="max-w-md ${isMe ? 'text-right' : 'text-left'}">
+                        <span class="text-xs text-gray-400 block mb-1 px-1">${msg.sender.name}</span>
+                        <div class="inline-block p-3 rounded-2xl text-sm ${isMe ? 'bg-blue-600 text-white rounded-tr-none' : 'bg-gray-800 text-gray-100 rounded-tl-none border border-gray-700'}">
+                            ${msg.text ? `<p class="break-words">${msg.text}</p>` : ''}
+                            ${msg.attachment ? `<div class="mt-2 pt-2 border-t border-gray-700 text-xs text-blue-300 flex items-center"><i class="fa-solid fa-file mr-1.5"></i> <a href="${msg.attachment}" target="_blank" class="hover:underline truncate max-w-[200px]">${msg.attachment.split('/').pop()}</a></div>` : ''}
+                        </div>
+                    </div>
+                </div>
+            `;
+            container.insertAdjacentHTML('beforeend', msgHtml);
+            container.scrollTop = container.scrollHeight;
+        }
+
+        function loadRooms() {
+            const list = document.getElementById('rooms-list');
+            list.innerHTML = `
+                <div onclick="selectRoom('global-room')" class="p-3 flex items-center space-x-3 rounded-xl hover:bg-gray-700 cursor-pointer transition">
+                    <div class="w-10 h-10 rounded-full bg-blue-500 flex items-center justify-center text-white font-bold"><i class="fa-solid fa-globe"></i></div>
+                    <div class="flex-1 min-w-0">
+                        <h4 class="font-semibold text-sm truncate">Global Lounge</h4>
+                        <p class="text-xs text-gray-400 truncate">Hugging Face Global Server</p>
+                    </div>
+                </div>
+            `;
+        }
+
+        function selectRoom(roomId) {
+            currentRoomId = roomId;
+            document.getElementById('chat-area').classList.remove('hidden');
+            document.getElementById('room-title').innerText = "Global Lounge";
+            document.getElementById('room-desc').innerText = "Hugging Face Global Server";
+            document.getElementById('room-icon').src = "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=100";
+            document.getElementById('messages-container').innerHTML = '';
+            socket.emit('join-room', { roomId });
+        }
+    </script>
+</body>
+</html>
